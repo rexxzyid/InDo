@@ -1,0 +1,30 @@
+impor { urai } dari "./parser.wni"
+impor { kompilasiProgram } dari "./kompiler.wni"
+
+fungsi konstJSON(k) {
+  tetap t = jenisdari k
+  jika (t == "angka") kembalikan { t: "n", v: k }
+  jika (t == "bilanganbesar") kembalikan { t: "B", v: Teks(k) }
+  jika (t == "teks") kembalikan { t: "s", v: k }
+  kembalikan { t: "F", v: keJSON(k) }
+}
+
+fungsi keJSON(f) {
+  kembalikan {
+    nama: f.nama,
+    arity: f.arity,
+    jumlahUpvalue: f.jumlahUpvalue,
+    generator: f.generator,
+    asinkron: f.asinkron,
+    punyaSisa: f.punyaSisa,
+    kode: f.potongan.kode,
+    garis: f.potongan.garis,
+    konstanta: f.potongan.konstanta.petakan((k) => konstJSON(k)),
+  }
+}
+
+tetap jalur = Proses.lingkungan.MASUKAN_MANDIRI
+tetap sumber = Berkas.baca(jalur)
+tetap pohon = urai(sumber, jalur)
+tetap fn = kompilasiProgram(pohon, jalur)
+cetak(JSON.teks(keJSON(fn)))

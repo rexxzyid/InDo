@@ -1,0 +1,15 @@
+fungsi buatPencacah() {
+  misal n = 0
+  kembalikan fungsi() {
+    n += 1
+    kembalikan n
+  }
+}
+misal cacah = buatPencacah()
+cetak(cacah(), cacah(), cacah())
+
+fungsi fib(n) {
+  jika (n < 2) kembalikan n
+  kembalikan fib(n - 1) + fib(n - 2)
+}
+cetak(fib(15))

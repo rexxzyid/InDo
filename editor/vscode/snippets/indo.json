@@ -1,0 +1,47 @@
+{
+  "Fungsi": {
+    "prefix": "fungsi",
+    "body": ["fungsi ${1:nama}(${2:parameter}) {", "\t$0", "}"],
+    "description": "Deklarasi fungsi"
+  },
+  "Fungsi panah": {
+    "prefix": "panah",
+    "body": ["(${1:parameter}) => ${0}"],
+    "description": "Fungsi panah"
+  },
+  "Jika": {
+    "prefix": "jika",
+    "body": ["jika (${1:kondisi}) {", "\t$0", "}"],
+    "description": "Pernyataan jika"
+  },
+  "Jika-lainnya": {
+    "prefix": "jikalain",
+    "body": ["jika (${1:kondisi}) {", "\t$2", "} lainnya {", "\t$0", "}"],
+    "description": "Pernyataan jika-lainnya"
+  },
+  "Untuk": {
+    "prefix": "untuk",
+    "body": ["untuk (misal ${1:i} = 0; ${1:i} < ${2:batas}; ${1:i}++) {", "\t$0", "}"],
+    "description": "Perulangan untuk klasik"
+  },
+  "Untuk dari": {
+    "prefix": "untukdari",
+    "body": ["untuk (misal ${1:item} dari ${2:daftar}) {", "\t$0", "}"],
+    "description": "Perulangan untuk...dari"
+  },
+  "Kelas": {
+    "prefix": "kelas",
+    "body": ["kelas ${1:Nama} {", "\tkonstruktor(${2:parameter}) {", "\t\t$0", "\t}", "}"],
+    "description": "Deklarasi kelas"
+  },
+  "Coba-tangkap": {
+    "prefix": "coba",
+    "body": ["coba {", "\t$1", "} tangkap (${2:galat}) {", "\t$0", "}"],
+    "description": "Coba-tangkap"
+  },
+  "Cetak": {
+    "prefix": "cetak",
+    "body": ["cetak(${0})"],
+    "description": "Cetak ke konsol"
+  }
+}

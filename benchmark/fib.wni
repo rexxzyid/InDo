@@ -1,0 +1,5 @@
+fungsi fib(n) {
+  jika (n < 2) kembalikan n
+  kembalikan fib(n - 1) + fib(n - 2)
+}
+cetak(fib(30))

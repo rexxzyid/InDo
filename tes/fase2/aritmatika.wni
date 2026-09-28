@@ -1,0 +1,4 @@
+cetak(1 + 2 * 3)
+cetak(2 ** 10)
+cetak(10 % 3, -5, ~0)
+cetak("hasil: " + (100 / 4))

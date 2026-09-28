@@ -1,0 +1,3 @@
+misal hasil = ""
+untuk (misal i = 0; i < 100000; i++) hasil = hasil + "x"
+cetak(hasil.panjang)

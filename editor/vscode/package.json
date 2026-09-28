@@ -1,0 +1,26 @@
+{
+  "name": "indo-bahasa",
+  "displayName": "InDo",
+  "description": "Sorotan sintaks, snippet, dan galat langsung untuk bahasa InDo (.wni)",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "indo",
+        "aliases": ["InDo", "indo"],
+        "extensions": [".wni"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "indo",
+        "scopeName": "source.indo",
+        "path": "./syntaxes/indo.tmLanguage.json"
+      }
+    ],
+    "snippets": [{ "language": "indo", "path": "./snippets/indo.json" }]
+  }
+}

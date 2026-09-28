@@ -1,0 +1,10 @@
+misal titik = { x: 3, y: 4, jumlah() { kembalikan ini.x + ini.y } }
+cetak(titik.jumlah())
+misal { x, y } = titik
+cetak(x, y)
+misal angka = [5, 3, 8, 1]
+misal [pertama, ...sisa] = angka
+cetak(pertama, sisa)
+cetak(angka.panjang)
+misal a = kosong
+cetak(a?.b ?? "bawaan")

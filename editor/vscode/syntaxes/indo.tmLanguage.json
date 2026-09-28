@@ -1,0 +1,63 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "InDo",
+  "scopeName": "source.indo",
+  "patterns": [
+    { "include": "#komentar" },
+    { "include": "#teks" },
+    { "include": "#template" },
+    { "include": "#angka" },
+    { "include": "#kata-kunci" },
+    { "include": "#konstanta" },
+    { "include": "#fungsi" },
+    { "include": "#operator" }
+  ],
+  "repository": {
+    "komentar": {
+      "patterns": [
+        { "name": "comment.line.double-slash.indo", "match": "//.*$" },
+        { "name": "comment.block.indo", "begin": "/\\*", "end": "\\*/" }
+      ]
+    },
+    "teks": {
+      "patterns": [
+        { "name": "string.quoted.double.indo", "begin": "\"", "end": "\"", "patterns": [{ "name": "constant.character.escape.indo", "match": "\\\\." }] },
+        { "name": "string.quoted.single.indo", "begin": "'", "end": "'", "patterns": [{ "name": "constant.character.escape.indo", "match": "\\\\." }] }
+      ]
+    },
+    "template": {
+      "name": "string.template.indo",
+      "begin": "`",
+      "end": "`",
+      "patterns": [
+        { "name": "constant.character.escape.indo", "match": "\\\\." },
+        { "name": "meta.template.expression.indo", "begin": "\\$\\{", "end": "\\}", "patterns": [{ "include": "$self" }] }
+      ]
+    },
+    "angka": {
+      "name": "constant.numeric.indo",
+      "match": "\\b(0[xX][0-9a-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|[0-9][0-9_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?n?)\\b"
+    },
+    "kata-kunci": {
+      "patterns": [
+        { "name": "keyword.control.indo", "match": "\\b(jika|lainnya|pilih|kasus|bawaan|selama|lakukan|untuk|dari|dalam|henti|lanjut|kembalikan|coba|tangkap|akhirnya|lempar|hasilkan|tunggu)\\b" },
+        { "name": "keyword.declaration.indo", "match": "\\b(misal|tetap|var|fungsi|kelas|impor|ekspor|sebagai)\\b" },
+        { "name": "storage.modifier.indo", "match": "\\b(asinkron|statis|dapatkan|tetapkan|konstruktor|mewarisi)\\b" },
+        { "name": "keyword.operator.word.indo", "match": "\\b(dan|atau|bukan|jenisdari|contohdari|hapus|abaikan|baru)\\b" },
+        { "name": "variable.language.indo", "match": "\\b(ini|induk)\\b" }
+      ]
+    },
+    "konstanta": {
+      "name": "constant.language.indo",
+      "match": "\\b(benar|salah|kosong|taktentu|Takhingga|NaN)\\b"
+    },
+    "fungsi": {
+      "name": "entity.name.function.indo",
+      "match": "\\b([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*(?=\\()"
+    },
+    "operator": {
+      "name": "keyword.operator.indo",
+      "match": "(\\+|\\-|\\*|/|%|\\*\\*|==|!=|<=|>=|<|>|&&|\\|\\||\\?\\?|=>|\\.\\.\\.|\\?\\.|=)"
+    }
+  }
+}

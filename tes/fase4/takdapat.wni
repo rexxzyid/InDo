@@ -1,0 +1,2 @@
+fungsi bagian() { lempar baru GalatTipe("gagal di dalam") }
+bagian()

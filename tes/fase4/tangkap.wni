@@ -1,0 +1,12 @@
+fungsi amanBagi(a, b) {
+  coba {
+    jika (b == 0) lempar baru GalatRentang("tidak bisa bagi nol")
+    kembalikan a / b
+  } tangkap (e) {
+    kembalikan `galat: ${e.pesan}`
+  } akhirnya {
+    cetak("selesai membagi")
+  }
+}
+cetak(amanBagi(10, 2))
+cetak(amanBagi(5, 0))

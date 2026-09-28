@@ -1,0 +1,14 @@
+cetak(Matematika.bulatkan(Matematika.PI * 100) / 100)
+misal kata = "InDo Bahasa Pemrograman"
+cetak(kata.besar())
+cetak(kata.pisah(" ").petakan((k) => k.panjang))
+misal angka = [3, 1, 4, 1, 5, 9, 2, 6]
+cetak("urut:", angka.diurutkan((a, b) => a - b))
+cetak("jumlah:", angka.kurangi((a, b) => a + b, 0))
+cetak("genap:", angka.saring((x) => x % 2 == 0))
+misal orang = { nama: "Sari", umur: 25, kota: "Bandung" }
+cetak(JSON.teks(orang))
+cetak("kunci:", Objek.kunci(orang).gabung(", "))
+misal email = "sari@contoh.id"
+cetak("valid:", /^[\w.]+@[\w.]+$/.uji(email))
+cetak(baru Tanggal(2026, 0, 1).keTeksIndonesia())

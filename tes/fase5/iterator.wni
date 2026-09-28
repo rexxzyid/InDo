@@ -1,0 +1,35 @@
+fungsi* fibonacci(batas) {
+  misal a = 0
+  misal b = 1
+  selama (a < batas) {
+    hasilkan a
+    misal c = a + b
+    a = b
+    b = c
+  }
+}
+misal hasil = []
+untuk (misal n dari fibonacci(20)) hasil = [...hasil, n]
+cetak(hasil)
+
+misal rentang = {
+  dari: 1,
+  sampai: 4,
+  [Simbol.iterator]() {
+    misal saat = ini.dari
+    misal batas = ini.sampai
+    kembalikan {
+      lanjut() {
+        jika (saat <= batas) {
+          misal nilai = saat
+          saat += 1
+          kembalikan { nilai: nilai, selesai: salah }
+        }
+        kembalikan { nilai: taktentu, selesai: benar }
+      }
+    }
+  }
+}
+misal jumlah = 0
+untuk (misal x dari rentang) jumlah += x
+cetak("jumlah 1..4:", jumlah)

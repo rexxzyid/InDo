@@ -1,0 +1,1642 @@
+tetap Op = {
+  Konstanta: 0, Kosong: 1, Taktentu: 2, Benar: 3, Salah: 4, Nol: 5, Satu: 6,
+  Pop: 7, Gandakan: 8, Gandakan2: 9, Tukar: 10,
+  TambahLokal: 11, BacaLokal: 12, TulisLokal: 13, BacaGlobal: 14, TulisGlobal: 15, DefinisiGlobal: 16,
+  BacaUpvalue: 17, TulisUpvalue: 18, TutupUpvalue: 19,
+  Tambah: 20, Kurang: 21, Kali: 22, Bagi: 23, Sisa: 24, Pangkat: 25, Negasi: 26, Positif: 27,
+  Dan: 28, Atau: 29, Xor: 30, Tilde: 31, GeserKiri: 32, GeserKanan: 33, GeserKananNol: 34,
+  SamaDengan: 35, TidakSama: 36, KurangDari: 37, LebihDari: 38, KurangSamaDari: 39, LebihSamaDari: 40,
+  Bukan: 41, JenisDari: 42, ContohDari: 43, Dalam: 44,
+  Lompat: 45, LompatJikaSalah: 46, LompatJikaBenar: 47, LompatBalik: 48,
+  Panggil: 49, PanggilDenganIni: 50, Penutup: 51, Kembali: 52,
+  LompatJikaKosong: 53, LompatJikaTaktentu: 54, LarikSisa: 55,
+  KelasBaru: 56, WarisiKelas: 57, MetodeKelas: 58, FieldInstance: 59, FieldStatis: 60, JalankanStatis: 61,
+  Konstruksi: 62, PanggilInduk: 63, BacaIndukMetode: 64, SelesaikanKelasInduk: 65,
+  PasangPenangan: 66, LepasPenangan: 67, Lempar: 68, LemparUlang: 69,
+  IteratorAwal: 70, IteratorLanjut: 71, KunciDalam: 72, Hasilkan: 73, Tunggu: 74,
+  MuatModul: 75, ImporDinamis: 76, Regex: 77,
+  LarikBaru: 78, LarikTambah: 79, LarikSebar: 80, ObjekBaru: 81, ObjekProp: 82, ObjekPropDinamis: 83, ObjekSebar: 84,
+  BacaProperti: 85, BacaPropertiOpsional: 86, TulisProperti: 87, BacaIndeks: 88, TulisIndeks: 89,
+  Cetak: 90,
+  IteratorAwalAsync: 91, IteratorLanjutAsync: 92,
+}
+
+tetap OP_BINER = baru Peta()
+OP_BINER.tetapkan("+", Op.Tambah)
+OP_BINER.tetapkan("-", Op.Kurang)
+OP_BINER.tetapkan("*", Op.Kali)
+OP_BINER.tetapkan("/", Op.Bagi)
+OP_BINER.tetapkan("%", Op.Sisa)
+OP_BINER.tetapkan("**", Op.Pangkat)
+OP_BINER.tetapkan("&", Op.Dan)
+OP_BINER.tetapkan("|", Op.Atau)
+OP_BINER.tetapkan("^", Op.Xor)
+OP_BINER.tetapkan("<<", Op.GeserKiri)
+OP_BINER.tetapkan(">>", Op.GeserKanan)
+OP_BINER.tetapkan(">>>", Op.GeserKananNol)
+OP_BINER.tetapkan("==", Op.SamaDengan)
+OP_BINER.tetapkan("!=", Op.TidakSama)
+OP_BINER.tetapkan("===", Op.SamaDengan)
+OP_BINER.tetapkan("!==", Op.TidakSama)
+OP_BINER.tetapkan("<", Op.KurangDari)
+OP_BINER.tetapkan(">", Op.LebihDari)
+OP_BINER.tetapkan("<=", Op.KurangSamaDari)
+OP_BINER.tetapkan(">=", Op.LebihSamaDari)
+
+fungsi akhirGaris(simpul) {
+  kembalikan simpul.baris
+}
+
+fungsi setPanjang(arr, n) {
+  selama (arr.panjang > n) arr.hapusAkhir()
+  selama (arr.panjang < n) arr.tambah(taktentu)
+}
+
+kelas Potongan {
+  konstruktor(namaBerkas) {
+    ini.kode = []
+    ini.konstanta = []
+    ini.garis = []
+    ini.namaBerkas = namaBerkas ?? "<masukan>"
+  }
+  tulis(nilai, garis) {
+    ini.kode.tambah(nilai)
+    ini.garis.tambah(garis)
+    kembalikan ini.kode.panjang - 1
+  }
+  tambahKonstanta(nilai) {
+    tetap ada = ini.konstanta.indeksDari(nilai)
+    jika (ada != -1) kembalikan ada
+    ini.konstanta.tambah(nilai)
+    kembalikan ini.konstanta.panjang - 1
+  }
+}
+
+fungsi buatFungsi(nama, potongan) {
+  kembalikan {
+    nama: nama,
+    potongan: potongan,
+    arity: 0,
+    jumlahUpvalue: 0,
+    generator: salah,
+    asinkron: salah,
+    punyaSisa: salah,
+  }
+}
+
+kelas Kompiler {
+  konstruktor(nama, namaBerkas, indukK) {
+    ini.namaBerkas = namaBerkas
+    ini.induk = indukK
+    ini.globalTetap = indukK != kosong ? indukK.globalTetap : baru Himpunan()
+    ini.fungsi = buatFungsi(nama, baru Potongan(namaBerkas))
+    ini.potongan = ini.fungsi.potongan
+    ini.lokal = []
+    ini.upvalue = []
+    ini.konteks = []
+    ini.proteksi = []
+    ini.labelTertunda = kosong
+    ini.kedalamanScope = 0
+    ini.penghitungTemp = 0
+    ini.konstruktorAktif = salah
+    ini.modeModul = salah
+    ini.eksporModul = []
+    ini.slotDefault = -1
+    ini.lokal.tambah({ nama: "", kedalaman: 0, siap: benar, tetap: benar, tertangkap: salah })
+  }
+
+  emit(nilai, garis) {
+    kembalikan ini.potongan.tulis(nilai, garis)
+  }
+
+  emitOperan(op, operan, garis) {
+    ini.emit(op, garis)
+    ini.emit(operan, garis)
+  }
+
+  emitKonstanta(nilai, garis) {
+    tetap indeks = ini.potongan.tambahKonstanta(nilai)
+    ini.emitOperan(Op.Konstanta, indeks, garis)
+  }
+
+  emitLompat(op, garis) {
+    ini.emit(op, garis)
+    kembalikan ini.emit(0, garis)
+  }
+
+  tambalLompat(slot) {
+    ini.potongan.kode[slot] = ini.potongan.kode.panjang
+  }
+
+  galat(simpul, pesan) {
+    lempar baru Galat(pesan)
+  }
+
+  mulaiScope() {
+    ini.kedalamanScope = ini.kedalamanScope + 1
+  }
+
+  akhiriScope(garis) {
+    ini.kedalamanScope = ini.kedalamanScope - 1
+    selama (ini.lokal.panjang > 0 dan ini.lokal[ini.lokal.panjang - 1].kedalaman > ini.kedalamanScope) {
+      tetap lokal = ini.lokal.hapusAkhir()
+      ini.emit(lokal.tertangkap ? Op.TutupUpvalue : Op.Pop, garis)
+    }
+  }
+
+  deklarasiLokal(nama, konstan, simpul) {
+    untuk (misal i = ini.lokal.panjang - 1; i >= 0; i--) {
+      tetap lokal = ini.lokal[i]
+      jika (lokal.kedalaman < ini.kedalamanScope) henti
+      jika (lokal.nama == nama) ini.galat(simpul, "Variabel \"" + nama + "\" sudah dideklarasikan pada scope ini")
+    }
+    ini.lokal.tambah({ nama: nama, kedalaman: ini.kedalamanScope, siap: salah, tetap: konstan, tertangkap: salah })
+  }
+
+  tandaiSiap() {
+    ini.lokal[ini.lokal.panjang - 1].siap = benar
+  }
+
+  selesaikanLokal(nama, simpul) {
+    untuk (misal i = ini.lokal.panjang - 1; i >= 0; i--) {
+      tetap lokal = ini.lokal[i]
+      jika (lokal.nama == nama) {
+        jika (bukan lokal.siap) ini.galat(simpul, "Variabel \"" + nama + "\" dipakai sebelum diinisialisasi")
+        kembalikan i
+      }
+    }
+    kembalikan -1
+  }
+
+  selesaikanUpvalue(nama, simpul) {
+    jika (ini.induk == kosong) kembalikan -1
+    tetap indeksLokal = ini.induk.selesaikanLokalUntukTangkap(nama)
+    jika (indeksLokal != -1) {
+      ini.induk.lokal[indeksLokal].tertangkap = benar
+      kembalikan ini.tambahUpvalue(indeksLokal, benar)
+    }
+    tetap indeksUpvalue = ini.induk.selesaikanUpvalue(nama, simpul)
+    jika (indeksUpvalue != -1) {
+      kembalikan ini.tambahUpvalue(indeksUpvalue, salah)
+    }
+    kembalikan -1
+  }
+
+  selesaikanLokalUntukTangkap(nama) {
+    untuk (misal i = ini.lokal.panjang - 1; i >= 0; i--) {
+      jika (ini.lokal[i].nama == nama) kembalikan i
+    }
+    kembalikan -1
+  }
+
+  tambahUpvalue(indeks, lokal) {
+    untuk (misal i = 0; i < ini.upvalue.panjang; i++) {
+      tetap u = ini.upvalue[i]
+      jika (u.indeks == indeks dan u.lokal == lokal) kembalikan i
+    }
+    ini.upvalue.tambah({ indeks: indeks, lokal: lokal })
+    ini.fungsi.jumlahUpvalue = ini.upvalue.panjang
+    kembalikan ini.upvalue.panjang - 1
+  }
+
+  pratindakHoisting(daftar) {
+    untuk (tetap pernyataan dari daftar) {
+      misal d = pernyataan
+      jika (d.jenis == "EksporBernama" dan d.deklarasi != kosong) {
+        d = d.deklarasi
+      } lainnya jika (d.jenis == "EksporBawaan" dan d.nilai.jenis == "DeklarasiFungsi") {
+        d = d.nilai
+      }
+      jika (d.jenis == "DeklarasiFungsi") {
+        tetap nama = d.fungsi.nama
+        jika (nama != kosong dan ini.kedalamanScope > 0) {
+          ini.deklarasiLokal(nama.nama, salah, d)
+          ini.tandaiSiap()
+          ini.emit(Op.Taktentu, d.baris)
+        }
+      }
+    }
+  }
+
+  pernyataan(simpul) {
+    tetap j = simpul.jenis
+    jika (j == "PernyataanEkspresi") {
+      ini.ekspresi(simpul.ekspresi)
+      ini.emit(Op.Pop, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (j == "DeklarasiVariabel") { ini.deklarasiVariabel(simpul); kembalikan taktentu }
+    jika (j == "Blok") {
+      ini.mulaiScope()
+      ini.pratindakHoisting(simpul.tubuh)
+      untuk (tetap p dari simpul.tubuh) ini.pernyataan(p)
+      ini.akhiriScope(simpul.baris)
+      kembalikan taktentu
+    }
+    jika (j == "PernyataanKosong") kembalikan taktentu
+    jika (j == "Jika") { ini.jika(simpul); kembalikan taktentu }
+    jika (j == "Selama") { ini.selama(simpul); kembalikan taktentu }
+    jika (j == "LakukanSelama") { ini.lakukanSelama(simpul); kembalikan taktentu }
+    jika (j == "UntukKlasik") { ini.untukKlasik(simpul); kembalikan taktentu }
+    jika (j == "UntukDari") { ini.untukDari(simpul); kembalikan taktentu }
+    jika (j == "UntukDalam") { ini.untukDalam(simpul); kembalikan taktentu }
+    jika (j == "Pilih") { ini.pilih(simpul); kembalikan taktentu }
+    jika (j == "Henti") { ini.henti(simpul); kembalikan taktentu }
+    jika (j == "Lanjut") { ini.lanjut(simpul); kembalikan taktentu }
+    jika (j == "Berlabel") { ini.berlabel(simpul); kembalikan taktentu }
+    jika (j == "Kembalikan") { ini.kembalikan(simpul); kembalikan taktentu }
+    jika (j == "Lempar") { ini.lempar(simpul); kembalikan taktentu }
+    jika (j == "Coba") { ini.coba(simpul); kembalikan taktentu }
+    jika (j == "DeklarasiFungsi") { ini.deklarasiFungsi(simpul); kembalikan taktentu }
+    jika (j == "DeklarasiKelas") { ini.deklarasiKelas(simpul); kembalikan taktentu }
+    jika (j == "Impor") { ini.imporModul(simpul); kembalikan taktentu }
+    jika (j == "EksporBernama") { ini.eksporBernama(simpul); kembalikan taktentu }
+    jika (j == "EksporBawaan") { ini.eksporBawaan(simpul); kembalikan taktentu }
+    jika (j == "EksporSemua") { ini.galat(simpul, "'ekspor *' belum didukung pada fase ini"); kembalikan taktentu }
+    ini.galat(simpul, "Pernyataan \"" + j + "\" belum didukung pada fase ini")
+  }
+
+  deklarasiVariabel(simpul) {
+    tetap konstan = simpul.ragam == "tetap"
+    untuk (tetap dek dari simpul.deklarasi) {
+      jika (dek.id.jenis == "Identifier") {
+        tetap nama = dek.id.nama
+        jika (ini.kedalamanScope == 0) {
+          jika (dek.awalNilai) ini.ekspresi(dek.awalNilai)
+          lainnya ini.emit(Op.Taktentu, dek.baris)
+          jika (konstan) ini.globalTetap.tambah(nama)
+          tetap indeks = ini.potongan.tambahKonstanta(nama)
+          ini.emitOperan(Op.DefinisiGlobal, indeks, dek.baris)
+        } lainnya {
+          ini.deklarasiLokal(nama, konstan, dek)
+          jika (dek.awalNilai) ini.ekspresi(dek.awalNilai)
+          lainnya ini.emit(Op.Taktentu, dek.baris)
+          ini.tandaiSiap()
+        }
+      } lainnya {
+        jika (bukan dek.awalNilai) ini.galat(dek.id, "Destrukturisasi membutuhkan nilai awal")
+        ini.ekspresi(dek.awalNilai)
+        tetap slot = ini.deklarasiTemp(dek)
+        ini.destrukDariSlot(dek.id, slot, simpul.ragam)
+      }
+    }
+  }
+
+  deklarasiTemp(simpul) {
+    tetap nama = "\u0000t" + ini.penghitungTemp
+    ini.penghitungTemp = ini.penghitungTemp + 1
+    ini.deklarasiLokal(nama, salah, simpul)
+    ini.tandaiSiap()
+    kembalikan ini.lokal.panjang - 1
+  }
+
+  emitKonstantaAngka(nilai, garis) {
+    jika (nilai == 0) ini.emit(Op.Nol, garis)
+    lainnya jika (nilai == 1) ini.emit(Op.Satu, garis)
+    lainnya ini.emitKonstanta(nilai, garis)
+  }
+
+  terapkanBawaan(bawaan, garis) {
+    tetap lompatTaktentu = ini.emitLompat(Op.LompatJikaTaktentu, garis)
+    tetap lompatAkhir = ini.emitLompat(Op.Lompat, garis)
+    ini.tambalLompat(lompatTaktentu)
+    ini.emit(Op.Pop, garis)
+    ini.ekspresi(bawaan)
+    ini.tambalLompat(lompatAkhir)
+  }
+
+  destrukDariSlot(pola, slot, ragam) {
+    jika (pola.jenis == "PolaLarik") {
+      untuk (misal i = 0; i < pola.elemen.panjang; i++) {
+        tetap el = pola.elemen[i]
+        jika (el == kosong) lanjut
+        jika (el.jenis == "PolaSisa") {
+          ini.emitOperan(Op.BacaLokal, slot, pola.baris)
+          ini.emitOperan(Op.LarikSisa, i, pola.baris)
+          ini.bindNilaiDiStack(el.argumen, ragam)
+          henti
+        }
+        ini.emitOperan(Op.BacaLokal, slot, pola.baris)
+        ini.emitKonstantaAngka(i, pola.baris)
+        ini.emit(Op.BacaIndeks, pola.baris)
+        ini.bindNilaiDiStack(el, ragam)
+      }
+      kembalikan taktentu
+    }
+    jika (pola.jenis == "PolaObjek") {
+      untuk (tetap prop dari pola.properti) {
+        jika (prop.jenis == "PolaSisa") {
+          ini.galat(prop, "Sisa pada pola objek belum didukung pada fase ini")
+        }
+        ini.emitOperan(Op.BacaLokal, slot, prop.baris)
+        jika (prop.terhitung) {
+          ini.ekspresi(prop.kunci)
+          ini.emit(Op.BacaIndeks, prop.baris)
+        } lainnya {
+          tetap indeks = ini.potongan.tambahKonstanta(ini.namaKunci(prop.kunci))
+          ini.emitOperan(Op.BacaProperti, indeks, prop.baris)
+        }
+        ini.bindNilaiDiStack(prop.nilai, ragam)
+      }
+      kembalikan taktentu
+    }
+    ini.bindNilaiDiStack(pola, ragam)
+  }
+
+  bindNilaiDiStack(pola, ragam) {
+    jika (pola.jenis == "PolaBawaan") {
+      ini.terapkanBawaan(pola.bawaan, pola.baris)
+      ini.bindNilaiDiStack(pola.kiri, ragam)
+      kembalikan taktentu
+    }
+    jika (pola.jenis == "Identifier") {
+      jika (ragam == "assign") {
+        ini.tulisVariabelTanpaPop(pola)
+        ini.emit(Op.Pop, pola.baris)
+        kembalikan taktentu
+      }
+      tetap konstan = ragam == "tetap"
+      jika (ini.kedalamanScope == 0) {
+        jika (konstan) ini.globalTetap.tambah(pola.nama)
+        tetap indeks = ini.potongan.tambahKonstanta(pola.nama)
+        ini.emitOperan(Op.DefinisiGlobal, indeks, pola.baris)
+      } lainnya {
+        ini.deklarasiLokal(pola.nama, konstan, pola)
+        ini.tandaiSiap()
+      }
+      kembalikan taktentu
+    }
+    jika (pola.jenis == "AksesAnggota") {
+      jika (ragam != "assign") ini.galat(pola, "Target ini tidak valid untuk deklarasi")
+      ini.galat(pola, "Target properti dalam destrukturisasi belum didukung pada fase ini")
+    }
+    jika (pola.jenis == "PolaLarik" atau pola.jenis == "PolaObjek") {
+      tetap slot = ini.deklarasiTemp(pola)
+      ini.destrukDariSlot(pola, slot, ragam)
+      kembalikan taktentu
+    }
+    ini.galat(pola, "Pola destrukturisasi tidak valid")
+  }
+
+  deklarasiFungsi(simpul) {
+    tetap nama = simpul.fungsi.nama.nama
+    jika (ini.kedalamanScope == 0) {
+      ini.fungsiLiteral(simpul.fungsi, "", salah)
+      tetap indeks = ini.potongan.tambahKonstanta(nama)
+      ini.emitOperan(Op.DefinisiGlobal, indeks, simpul.baris)
+    } lainnya {
+      tetap indeksLokal = ini.selesaikanLokal(nama, simpul)
+      jika (indeksLokal == -1) {
+        ini.deklarasiLokal(nama, salah, simpul)
+        ini.fungsiLiteral(simpul.fungsi, nama, salah)
+        ini.tandaiSiap()
+      } lainnya {
+        ini.fungsiLiteral(simpul.fungsi, nama, salah)
+        ini.emitOperan(Op.TulisLokal, indeksLokal, simpul.baris)
+        ini.emit(Op.Pop, simpul.baris)
+      }
+    }
+  }
+
+  jika(simpul) {
+    ini.ekspresi(simpul.uji)
+    tetap lompatSalah = ini.emitLompat(Op.LompatJikaSalah, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.pernyataan(simpul.konsekuen)
+    tetap lompatAkhir = ini.emitLompat(Op.Lompat, simpul.baris)
+    ini.tambalLompat(lompatSalah)
+    ini.emit(Op.Pop, simpul.baris)
+    jika (simpul.alternatif) ini.pernyataan(simpul.alternatif)
+    ini.tambalLompat(lompatAkhir)
+  }
+
+  buatKonteks(jenis, label) {
+    kembalikan {
+      jenis: jenis,
+      label: label,
+      awalLanjut: -1,
+      tambalanLanjut: [],
+      tambalanHenti: [],
+      kedalamanScope: ini.kedalamanScope,
+      kedalamanProteksi: ini.proteksi.panjang,
+    }
+  }
+
+  selama(simpul) {
+    tetap label = ini.ambilLabelTertunda()
+    tetap awalLoop = ini.potongan.kode.panjang
+    tetap ktx = ini.buatKonteks("loop", label)
+    ktx.awalLanjut = awalLoop
+    ini.konteks.tambah(ktx)
+    ini.ekspresi(simpul.uji)
+    tetap lompatKeluar = ini.emitLompat(Op.LompatJikaSalah, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.pernyataan(simpul.tubuh)
+    ini.emitOperan(Op.LompatBalik, awalLoop, simpul.baris)
+    ini.tambalLompat(lompatKeluar)
+    ini.emit(Op.Pop, simpul.baris)
+    untuk (tetap slot dari ktx.tambalanHenti) ini.tambalLompat(slot)
+    ini.konteks.hapusAkhir()
+  }
+
+  lakukanSelama(simpul) {
+    tetap label = ini.ambilLabelTertunda()
+    tetap awalLoop = ini.potongan.kode.panjang
+    tetap ktx = ini.buatKonteks("loop", label)
+    ini.konteks.tambah(ktx)
+    ini.pernyataan(simpul.tubuh)
+    untuk (tetap slot dari ktx.tambalanLanjut) ini.tambalLompat(slot)
+    ini.ekspresi(simpul.uji)
+    tetap lompatKeluar = ini.emitLompat(Op.LompatJikaSalah, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.emitOperan(Op.LompatBalik, awalLoop, simpul.baris)
+    ini.tambalLompat(lompatKeluar)
+    ini.emit(Op.Pop, simpul.baris)
+    untuk (tetap slot dari ktx.tambalanHenti) ini.tambalLompat(slot)
+    ini.konteks.hapusAkhir()
+  }
+
+  untukKlasik(simpul) {
+    tetap label = ini.ambilLabelTertunda()
+    ini.mulaiScope()
+    jika (simpul.init) {
+      jika (simpul.init.jenis == "DeklarasiVariabel") {
+        ini.deklarasiVariabel(simpul.init)
+      } lainnya {
+        ini.ekspresi(simpul.init)
+        ini.emit(Op.Pop, simpul.baris)
+      }
+    }
+    tetap awalLoop = ini.potongan.kode.panjang
+    tetap ktx = ini.buatKonteks("loop", label)
+    ini.konteks.tambah(ktx)
+    misal lompatKeluar = -1
+    jika (simpul.uji) {
+      ini.ekspresi(simpul.uji)
+      lompatKeluar = ini.emitLompat(Op.LompatJikaSalah, simpul.baris)
+      ini.emit(Op.Pop, simpul.baris)
+    }
+    ini.pernyataan(simpul.tubuh)
+    untuk (tetap slot dari ktx.tambalanLanjut) ini.tambalLompat(slot)
+    jika (simpul.perbarui) {
+      ini.ekspresi(simpul.perbarui)
+      ini.emit(Op.Pop, simpul.baris)
+    }
+    ini.emitOperan(Op.LompatBalik, awalLoop, simpul.baris)
+    jika (lompatKeluar != -1) {
+      ini.tambalLompat(lompatKeluar)
+      ini.emit(Op.Pop, simpul.baris)
+    }
+    untuk (tetap slot dari ktx.tambalanHenti) ini.tambalLompat(slot)
+    ini.konteks.hapusAkhir()
+    ini.akhiriScope(simpul.baris)
+  }
+
+  untukDari(simpul) {
+    tetap label = ini.ambilLabelTertunda()
+    ini.mulaiScope()
+    ini.ekspresi(simpul.kanan)
+    jika (simpul.tunggu) {
+      ini.emit(Op.IteratorAwalAsync, simpul.baris)
+      ini.loopIteratorAsync(simpul, simpul.kidal, simpul.tubuh, label)
+    } lainnya {
+      ini.emit(Op.IteratorAwal, simpul.baris)
+      ini.loopIterator(simpul, simpul.kidal, simpul.tubuh, label)
+    }
+    ini.akhiriScope(simpul.baris)
+  }
+
+  loopIteratorAsync(simpul, kidal, tubuh, label) {
+    tetap iterSlot = ini.deklarasiTemp(simpul)
+    tetap awalLoop = ini.potongan.kode.panjang
+    tetap ktx = ini.buatKonteks("loop", label)
+    ktx.awalLanjut = awalLoop
+    ini.konteks.tambah(ktx)
+
+    ini.emitOperan(Op.BacaLokal, iterSlot, simpul.baris)
+    ini.emit(Op.IteratorLanjutAsync, simpul.baris)
+    ini.emit(Op.Tunggu, simpul.baris)
+    ini.emit(Op.Gandakan, simpul.baris)
+    tetap iSelesai = ini.potongan.tambahKonstanta("selesai")
+    ini.emitOperan(Op.BacaProperti, iSelesai, simpul.baris)
+    tetap lompatKeluar = ini.emitLompat(Op.LompatJikaBenar, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+    tetap iNilai = ini.potongan.tambahKonstanta("nilai")
+    ini.emitOperan(Op.BacaProperti, iNilai, simpul.baris)
+
+    ini.mulaiScope()
+    ini.bindTargetIterasi(kidal)
+    ini.pernyataan(tubuh)
+    ini.akhiriScope(simpul.baris)
+    ini.emitOperan(Op.LompatBalik, awalLoop, simpul.baris)
+
+    ini.tambalLompat(lompatKeluar)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+    untuk (tetap slot dari ktx.tambalanHenti) ini.tambalLompat(slot)
+    ini.konteks.hapusAkhir()
+  }
+
+  untukDalam(simpul) {
+    tetap label = ini.ambilLabelTertunda()
+    ini.mulaiScope()
+    ini.ekspresi(simpul.kanan)
+    ini.emit(Op.KunciDalam, simpul.baris)
+    ini.emit(Op.IteratorAwal, simpul.baris)
+    ini.loopIterator(simpul, simpul.kidal, simpul.tubuh, label)
+    ini.akhiriScope(simpul.baris)
+  }
+
+  loopIterator(simpul, kidal, tubuh, label) {
+    tetap iterSlot = ini.deklarasiTemp(simpul)
+    tetap awalLoop = ini.potongan.kode.panjang
+    tetap ktx = ini.buatKonteks("loop", label)
+    ktx.awalLanjut = awalLoop
+    ini.konteks.tambah(ktx)
+
+    ini.emitOperan(Op.BacaLokal, iterSlot, simpul.baris)
+    ini.emit(Op.IteratorLanjut, simpul.baris)
+    tetap lompatKeluar = ini.emitLompat(Op.LompatJikaBenar, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+
+    ini.mulaiScope()
+    ini.bindTargetIterasi(kidal)
+    ini.pernyataan(tubuh)
+    ini.akhiriScope(simpul.baris)
+    ini.emitOperan(Op.LompatBalik, awalLoop, simpul.baris)
+
+    ini.tambalLompat(lompatKeluar)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+    untuk (tetap slot dari ktx.tambalanHenti) ini.tambalLompat(slot)
+    ini.konteks.hapusAkhir()
+  }
+
+  bindTargetIterasi(kidal) {
+    jika (kidal.jenis == "DeklarasiVariabel") {
+      ini.bindNilaiDiStack(kidal.deklarasi[0].id, kidal.ragam)
+    } lainnya {
+      ini.bindNilaiDiStack(kidal, "assign")
+    }
+  }
+
+  ambilLabelTertunda() {
+    tetap label = ini.labelTertunda
+    ini.labelTertunda = kosong
+    kembalikan label
+  }
+
+  emitPopKeKedalaman(target, garis) {
+    untuk (misal i = ini.lokal.panjang - 1; i >= 0; i--) {
+      tetap lokal = ini.lokal[i]
+      jika (lokal.kedalaman <= target) henti
+      ini.emit(lokal.tertangkap ? Op.TutupUpvalue : Op.Pop, garis)
+    }
+  }
+
+  emitPembersihanProteksi(sampaiIndeks, garis) {
+    tetap simpan = ini.proteksi.panjang
+    untuk (misal i = ini.proteksi.panjang - 1; i >= sampaiIndeks; i--) {
+      tetap p = ini.proteksi[i]
+      setPanjang(ini.proteksi, i)
+      jika (p.adaHandler) ini.emit(Op.LepasPenangan, garis)
+      jika (p.finallyNode) ini.pernyataan(p.finallyNode)
+    }
+    setPanjang(ini.proteksi, simpan)
+  }
+
+  cariKonteks(label, simpul, butuhLoop) {
+    untuk (misal i = ini.konteks.panjang - 1; i >= 0; i--) {
+      tetap ktx = ini.konteks[i]
+      jika (label != kosong dan ktx.label != label) lanjut
+      jika (butuhLoop dan ktx.jenis != "loop") {
+        jika (label != kosong) ini.galat(simpul, "Label \"" + label + "\" bukan perulangan")
+        lanjut
+      }
+      kembalikan ktx
+    }
+    jika (label != kosong) ini.galat(simpul, "Label \"" + label + "\" tidak ditemukan")
+    ini.galat(simpul, butuhLoop ? "'lanjut' di luar perulangan" : "'henti' di luar perulangan atau 'pilih'")
+  }
+
+  henti(simpul) {
+    tetap ktx = ini.cariKonteks(simpul.label ? simpul.label.nama : kosong, simpul, salah)
+    ini.emitPembersihanProteksi(ktx.kedalamanProteksi, simpul.baris)
+    ini.emitPopKeKedalaman(ktx.kedalamanScope, simpul.baris)
+    ktx.tambalanHenti.tambah(ini.emitLompat(Op.Lompat, simpul.baris))
+  }
+
+  lanjut(simpul) {
+    tetap ktx = ini.cariKonteks(simpul.label ? simpul.label.nama : kosong, simpul, benar)
+    ini.emitPembersihanProteksi(ktx.kedalamanProteksi, simpul.baris)
+    ini.emitPopKeKedalaman(ktx.kedalamanScope, simpul.baris)
+    jika (ktx.awalLanjut >= 0) {
+      ini.emitOperan(Op.LompatBalik, ktx.awalLanjut, simpul.baris)
+    } lainnya {
+      ktx.tambalanLanjut.tambah(ini.emitLompat(Op.Lompat, simpul.baris))
+    }
+  }
+
+  pilih(simpul) {
+    ini.mulaiScope()
+    ini.ekspresi(simpul.diskriminan)
+    tetap ktx = ini.buatKonteks("pilih", ini.ambilLabelTertunda())
+    ini.konteks.tambah(ktx)
+
+    tetap tambalanBody = []
+    misal indeksBawaan = -1
+    untuk (misal i = 0; i < simpul.kasus.panjang; i++) {
+      tetap ks = simpul.kasus[i]
+      jika (ks.uji == kosong) {
+        indeksBawaan = i
+        tambalanBody.tambah(-1)
+        lanjut
+      }
+      ini.emit(Op.Gandakan, ks.baris)
+      ini.ekspresi(ks.uji)
+      ini.emit(Op.SamaDengan, ks.baris)
+      tetap lompatLewat = ini.emitLompat(Op.LompatJikaSalah, ks.baris)
+      ini.emit(Op.Pop, ks.baris)
+      tambalanBody.tambah(ini.emitLompat(Op.Lompat, ks.baris))
+      ini.tambalLompat(lompatLewat)
+      ini.emit(Op.Pop, ks.baris)
+    }
+    tetap lompatTanpaCocok = ini.emitLompat(Op.Lompat, simpul.baris)
+
+    untuk (misal i = 0; i < simpul.kasus.panjang; i++) {
+      tetap ks = simpul.kasus[i]
+      tetap slot = tambalanBody[i]
+      jika (slot != -1) ini.tambalLompat(slot)
+      jika (i == indeksBawaan) ini.tambalLompat(lompatTanpaCocok)
+      untuk (tetap p dari ks.tubuh) ini.pernyataan(p)
+    }
+    jika (indeksBawaan == -1) ini.tambalLompat(lompatTanpaCocok)
+
+    untuk (tetap slot dari ktx.tambalanHenti) ini.tambalLompat(slot)
+    ini.konteks.hapusAkhir()
+    ini.emit(Op.Pop, simpul.baris)
+    ini.akhiriScope(simpul.baris)
+  }
+
+  hasilkan(simpul) {
+    jika (simpul.delegasi) {
+      ini.mulaiScope()
+      ini.ekspresi(simpul.argumen)
+      ini.emit(Op.IteratorAwal, simpul.baris)
+      tetap itSlot = ini.deklarasiTemp(simpul)
+      tetap awalLoop = ini.potongan.kode.panjang
+      ini.emitOperan(Op.BacaLokal, itSlot, simpul.baris)
+      ini.emit(Op.IteratorLanjut, simpul.baris)
+      tetap lompatKeluar = ini.emitLompat(Op.LompatJikaBenar, simpul.baris)
+      ini.emit(Op.Pop, simpul.baris)
+      ini.emit(Op.Hasilkan, simpul.baris)
+      ini.emit(Op.Pop, simpul.baris)
+      ini.emitOperan(Op.LompatBalik, awalLoop, simpul.baris)
+      ini.tambalLompat(lompatKeluar)
+      ini.emit(Op.Pop, simpul.baris)
+      ini.emit(Op.Pop, simpul.baris)
+      ini.akhiriScope(simpul.baris)
+      ini.emit(Op.Taktentu, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (simpul.argumen) ini.ekspresi(simpul.argumen)
+    lainnya ini.emit(Op.Taktentu, simpul.baris)
+    ini.emit(Op.Hasilkan, simpul.baris)
+  }
+
+  lempar(simpul) {
+    ini.ekspresi(simpul.argumen)
+    ini.emit(Op.Lempar, simpul.baris)
+  }
+
+  coba(simpul) {
+    tetap punyaTangkap = simpul.penangkap != kosong
+    tetap punyaAkhirnya = simpul.akhirnya != kosong
+
+    tetap slotH1 = ini.emitLompat(Op.PasangPenangan, simpul.baris)
+    ini.proteksi.tambah({ finallyNode: simpul.akhirnya, adaHandler: benar })
+    ini.pernyataan(simpul.blok)
+    ini.proteksi.hapusAkhir()
+    ini.emit(Op.LepasPenangan, simpul.baris)
+    tetap slotNormalDariTry = ini.emitLompat(Op.Lompat, simpul.baris)
+
+    ini.tambalLompat(slotH1)
+    tetap lompatKeNormal = []
+
+    jika (punyaTangkap) {
+      tetap penangkap = simpul.penangkap
+      misal slotH2 = -1
+      jika (punyaAkhirnya) slotH2 = ini.emitLompat(Op.PasangPenangan, penangkap.baris)
+      ini.mulaiScope()
+      jika (penangkap.param) {
+        jika (penangkap.param.jenis == "Identifier") {
+          ini.deklarasiLokal(penangkap.param.nama, salah, penangkap.param)
+          ini.tandaiSiap()
+        } lainnya {
+          tetap slot = ini.deklarasiTemp(penangkap.param)
+          ini.destrukDariSlot(penangkap.param, slot, "misal")
+        }
+      } lainnya {
+        ini.emit(Op.Pop, penangkap.baris)
+      }
+      jika (punyaAkhirnya) ini.proteksi.tambah({ finallyNode: simpul.akhirnya, adaHandler: benar })
+      ini.pernyataan(penangkap.tubuh)
+      jika (punyaAkhirnya) ini.proteksi.hapusAkhir()
+      ini.akhiriScope(penangkap.baris)
+      jika (punyaAkhirnya) ini.emit(Op.LepasPenangan, penangkap.baris)
+      lompatKeNormal.tambah(ini.emitLompat(Op.Lompat, penangkap.baris))
+      jika (punyaAkhirnya) {
+        ini.tambalLompat(slotH2)
+        ini.pernyataan(simpul.akhirnya)
+        ini.emit(Op.LemparUlang, simpul.baris)
+      }
+    } lainnya {
+      ini.pernyataan(simpul.akhirnya)
+      ini.emit(Op.LemparUlang, simpul.baris)
+    }
+
+    ini.tambalLompat(slotNormalDariTry)
+    untuk (tetap slot dari lompatKeNormal) ini.tambalLompat(slot)
+    jika (punyaAkhirnya) ini.pernyataan(simpul.akhirnya)
+  }
+
+  berlabel(simpul) {
+    tetap tubuh = simpul.tubuh
+    tetap j = tubuh.jenis
+    jika (j == "Selama" atau j == "LakukanSelama" atau j == "UntukKlasik" atau j == "UntukDari" atau j == "UntukDalam" atau j == "Pilih") {
+      ini.labelTertunda = simpul.label.nama
+      ini.pernyataan(tubuh)
+      kembalikan taktentu
+    }
+    tetap ktx = ini.buatKonteks("pilih", simpul.label.nama)
+    ini.konteks.tambah(ktx)
+    ini.pernyataan(tubuh)
+    untuk (tetap slot dari ktx.tambalanHenti) ini.tambalLompat(slot)
+    ini.konteks.hapusAkhir()
+  }
+
+  kembalikan(simpul) {
+    jika (ini.induk == kosong) ini.galat(simpul, "'kembalikan' hanya boleh di dalam fungsi")
+    jika (simpul.argumen) ini.ekspresi(simpul.argumen)
+    lainnya jika (ini.konstruktorAktif) ini.emitOperan(Op.BacaLokal, 0, simpul.baris)
+    lainnya ini.emit(Op.Taktentu, simpul.baris)
+    ini.emitPembersihanProteksi(0, simpul.baris)
+    ini.emit(Op.Kembali, simpul.baris)
+  }
+
+  ekspresi(simpul) {
+    tetap j = simpul.jenis
+    jika (j == "LiteralAngka") {
+      jika (simpul.nilai == 0) ini.emit(Op.Nol, simpul.baris)
+      lainnya jika (simpul.nilai == 1) ini.emit(Op.Satu, simpul.baris)
+      lainnya ini.emitKonstanta(simpul.nilai, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (j == "LiteralBilanganBesar") { ini.emitKonstanta(simpul.nilai, simpul.baris); kembalikan taktentu }
+    jika (j == "LiteralTeks") { ini.emitKonstanta(simpul.nilai, simpul.baris); kembalikan taktentu }
+    jika (j == "LiteralBoolean") { ini.emit(simpul.nilai ? Op.Benar : Op.Salah, simpul.baris); kembalikan taktentu }
+    jika (j == "LiteralKosong") { ini.emit(Op.Kosong, simpul.baris); kembalikan taktentu }
+    jika (j == "LiteralTaktentu") { ini.emit(Op.Taktentu, simpul.baris); kembalikan taktentu }
+    jika (j == "LiteralRegex") {
+      tetap iPola = ini.potongan.tambahKonstanta(simpul.pola)
+      tetap iBendera = ini.potongan.tambahKonstanta(simpul.bendera)
+      ini.emit(Op.Regex, simpul.baris)
+      ini.emit(iPola, simpul.baris)
+      ini.emit(iBendera, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (j == "Identifier") { ini.bacaVariabel(simpul); kembalikan taktentu }
+    jika (j == "Ini") { ini.bacaNama("ini", simpul); kembalikan taktentu }
+    jika (j == "Larik") { ini.larik(simpul); kembalikan taktentu }
+    jika (j == "Objek") { ini.objek(simpul); kembalikan taktentu }
+    jika (j == "AksesAnggota") { ini.aksesAnggota(simpul); kembalikan taktentu }
+    jika (j == "RantaiOpsional") { ini.rantaiOpsional(simpul); kembalikan taktentu }
+    jika (j == "Baru") { ini.baru(simpul); kembalikan taktentu }
+    jika (j == "TemplateTeks") { ini.templateTeks(simpul); kembalikan taktentu }
+    jika (j == "Biner") { ini.biner(simpul); kembalikan taktentu }
+    jika (j == "Logika") { ini.logika(simpul); kembalikan taktentu }
+    jika (j == "Uner") { ini.uner(simpul); kembalikan taktentu }
+    jika (j == "Perbarui") { ini.perbarui(simpul); kembalikan taktentu }
+    jika (j == "Penugasan") { ini.penugasan(simpul); kembalikan taktentu }
+    jika (j == "Kondisional") { ini.kondisional(simpul); kembalikan taktentu }
+    jika (j == "Urutan") { ini.urutan(simpul); kembalikan taktentu }
+    jika (j == "Pemanggilan") { ini.pemanggilan(simpul); kembalikan taktentu }
+    jika (j == "Fungsi") { ini.fungsiLiteral(simpul, "", salah); kembalikan taktentu }
+    jika (j == "KelasEkspresi") { ini.kelasEkspresi(simpul); kembalikan taktentu }
+    jika (j == "Hasilkan") { ini.hasilkan(simpul); kembalikan taktentu }
+    jika (j == "Tunggu") {
+      ini.ekspresi(simpul.argumen)
+      ini.emit(Op.Tunggu, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (j == "ImporDinamis") {
+      ini.ekspresi(simpul.sumber)
+      ini.emit(Op.ImporDinamis, simpul.baris)
+      kembalikan taktentu
+    }
+    ini.galat(simpul, "Ekspresi \"" + j + "\" belum didukung pada fase ini")
+  }
+
+  templateTeks(simpul) {
+    ini.emitKonstanta(simpul.bagian[0] ?? "", simpul.baris)
+    untuk (misal i = 0; i < simpul.ekspresi.panjang; i++) {
+      ini.ekspresi(simpul.ekspresi[i])
+      ini.emit(Op.Tambah, simpul.baris)
+      ini.emitKonstanta(simpul.bagian[i + 1] ?? "", simpul.baris)
+      ini.emit(Op.Tambah, simpul.baris)
+    }
+  }
+
+  biner(simpul) {
+    jika (ini.lipatKonstan(simpul)) kembalikan taktentu
+    ini.ekspresi(simpul.kiri)
+    ini.ekspresi(simpul.kanan)
+    jika (simpul.operator == "contohdari") {
+      ini.emit(Op.ContohDari, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (simpul.operator == "dalam") {
+      ini.emit(Op.Dalam, simpul.baris)
+      kembalikan taktentu
+    }
+    tetap op = OP_BINER.ambil(simpul.operator)
+    jika (op == taktentu) ini.galat(simpul, "Operator \"" + simpul.operator + "\" tidak dikenal")
+    ini.emit(op, simpul.baris)
+  }
+
+  lipatKonstan(simpul) {
+    tetap kiri = simpul.kiri
+    tetap kanan = simpul.kanan
+    jika (kiri.jenis == "LiteralAngka" dan kanan.jenis == "LiteralAngka") {
+      tetap a = kiri.nilai
+      tetap b = kanan.nilai
+      tetap op = simpul.operator
+      misal hasil = taktentu
+      misal boolHasil = salah
+      jika (op == "+") hasil = a + b
+      lainnya jika (op == "-") hasil = a - b
+      lainnya jika (op == "*") hasil = a * b
+      lainnya jika (op == "/") hasil = a / b
+      lainnya jika (op == "%") hasil = a % b
+      lainnya jika (op == "**") hasil = a ** b
+      lainnya jika (op == "&") hasil = a & b
+      lainnya jika (op == "|") hasil = a | b
+      lainnya jika (op == "^") hasil = a ^ b
+      lainnya jika (op == "<<") hasil = a << b
+      lainnya jika (op == ">>") hasil = a >> b
+      lainnya jika (op == ">>>") hasil = a >>> b
+      lainnya jika (op == "<") { boolHasil = benar; hasil = a < b }
+      lainnya jika (op == ">") { boolHasil = benar; hasil = a > b }
+      lainnya jika (op == "<=") { boolHasil = benar; hasil = a <= b }
+      lainnya jika (op == ">=") { boolHasil = benar; hasil = a >= b }
+      lainnya jika (op == "==" atau op == "===") { boolHasil = benar; hasil = a == b }
+      lainnya jika (op == "!=" atau op == "!==") { boolHasil = benar; hasil = a != b }
+      lainnya kembalikan salah
+      jika (boolHasil) ini.emit(hasil ? Op.Benar : Op.Salah, simpul.baris)
+      lainnya ini.emitKonstantaAngka(hasil, simpul.baris)
+      kembalikan benar
+    }
+    jika (kiri.jenis == "LiteralTeks" dan kanan.jenis == "LiteralTeks" dan simpul.operator == "+") {
+      ini.emitKonstanta(kiri.nilai + kanan.nilai, simpul.baris)
+      kembalikan benar
+    }
+    kembalikan salah
+  }
+
+  logika(simpul) {
+    ini.ekspresi(simpul.kiri)
+    jika (simpul.operator == "&&") {
+      tetap lompat = ini.emitLompat(Op.LompatJikaSalah, simpul.baris)
+      ini.emit(Op.Pop, simpul.baris)
+      ini.ekspresi(simpul.kanan)
+      ini.tambalLompat(lompat)
+    } lainnya jika (simpul.operator == "||") {
+      tetap lompat = ini.emitLompat(Op.LompatJikaBenar, simpul.baris)
+      ini.emit(Op.Pop, simpul.baris)
+      ini.ekspresi(simpul.kanan)
+      ini.tambalLompat(lompat)
+    } lainnya {
+      tetap lompatNullish = ini.emitLompat(Op.LompatJikaKosong, simpul.baris)
+      tetap lompatAkhir = ini.emitLompat(Op.Lompat, simpul.baris)
+      ini.tambalLompat(lompatNullish)
+      ini.emit(Op.Pop, simpul.baris)
+      ini.ekspresi(simpul.kanan)
+      ini.tambalLompat(lompatAkhir)
+    }
+  }
+
+  uner(simpul) {
+    jika (simpul.operator == "hapus" atau simpul.operator == "abaikan") {
+      ini.galat(simpul, "Operator \"" + simpul.operator + "\" belum didukung pada fase ini")
+    }
+    ini.ekspresi(simpul.argumen)
+    jika (simpul.operator == "-") { ini.emit(Op.Negasi, simpul.baris); kembalikan taktentu }
+    jika (simpul.operator == "+") { ini.emit(Op.Positif, simpul.baris); kembalikan taktentu }
+    jika (simpul.operator == "!") { ini.emit(Op.Bukan, simpul.baris); kembalikan taktentu }
+    jika (simpul.operator == "~") { ini.emit(Op.Tilde, simpul.baris); kembalikan taktentu }
+    jika (simpul.operator == "jenisdari") { ini.emit(Op.JenisDari, simpul.baris); kembalikan taktentu }
+    ini.galat(simpul, "Operator uner \"" + simpul.operator + "\" tidak dikenal")
+  }
+
+  perbarui(simpul) {
+    tetap opAngka = simpul.operator == "++" ? Op.Tambah : Op.Kurang
+    jika (simpul.argumen.jenis == "Identifier") {
+      tetap nama = simpul.argumen
+      ini.bacaVariabel(nama)
+      ini.emit(Op.Positif, simpul.baris)
+      jika (bukan simpul.prefiks) ini.emit(Op.Gandakan, simpul.baris)
+      ini.emit(Op.Satu, simpul.baris)
+      ini.emit(opAngka, simpul.baris)
+      ini.tulisVariabelTanpaPop(nama)
+      jika (bukan simpul.prefiks) ini.emit(Op.Pop, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (simpul.argumen.jenis == "AksesAnggota" dan bukan simpul.prefiks) {
+      ini.galat(simpul, "'++'/'--' postfiks pada properti belum didukung; gunakan '+= 1'")
+    }
+    jika (simpul.argumen.jenis == "AksesAnggota" dan bukan simpul.argumen.terhitung) {
+      tetap anggota = simpul.argumen
+      tetap namaKonst = ini.potongan.tambahKonstanta(ini.namaProperti(anggota.properti))
+      ini.ekspresi(anggota.objek)
+      ini.emit(Op.Gandakan, simpul.baris)
+      ini.emitOperan(Op.BacaProperti, namaKonst, simpul.baris)
+      ini.emit(Op.Satu, simpul.baris)
+      ini.emit(opAngka, simpul.baris)
+      ini.emitOperan(Op.TulisProperti, namaKonst, simpul.baris)
+      kembalikan taktentu
+    }
+    ini.galat(simpul, "Sasaran '++'/'--' belum didukung pada fase ini")
+  }
+
+  urutan(simpul) {
+    untuk (misal i = 0; i < simpul.ekspresi.panjang; i++) {
+      ini.ekspresi(simpul.ekspresi[i])
+      jika (i < simpul.ekspresi.panjang - 1) ini.emit(Op.Pop, simpul.baris)
+    }
+  }
+
+  kondisional(simpul) {
+    ini.ekspresi(simpul.uji)
+    tetap lompatSalah = ini.emitLompat(Op.LompatJikaSalah, simpul.baris)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.ekspresi(simpul.konsekuen)
+    tetap lompatAkhir = ini.emitLompat(Op.Lompat, simpul.baris)
+    ini.tambalLompat(lompatSalah)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.ekspresi(simpul.alternatif)
+    ini.tambalLompat(lompatAkhir)
+  }
+
+  penugasan(simpul) {
+    tetap sasaran = simpul.sasaran
+    jika (sasaran.jenis == "Identifier") { ini.penugasanIdentifier(simpul, sasaran); kembalikan taktentu }
+    jika (sasaran.jenis == "AksesAnggota") { ini.penugasanAnggota(simpul, sasaran); kembalikan taktentu }
+    jika (sasaran.jenis == "PolaLarik" atau sasaran.jenis == "PolaObjek") {
+      jika (simpul.operator != "=") ini.galat(simpul, "Destrukturisasi hanya mendukung '='")
+      ini.ekspresi(simpul.nilai)
+      tetap slot = ini.deklarasiTemp(simpul)
+      ini.destrukDariSlot(sasaran, slot, "assign")
+      ini.emitOperan(Op.BacaLokal, slot, simpul.baris)
+      kembalikan taktentu
+    }
+    ini.galat(simpul, "Sasaran penugasan tidak valid")
+  }
+
+  penugasanIdentifier(simpul, sasaran) {
+    jika (simpul.operator == "=") {
+      ini.ekspresi(simpul.nilai)
+      ini.tulisVariabelTanpaPop(sasaran)
+      kembalikan taktentu
+    }
+    jika (simpul.operator == "&&=" atau simpul.operator == "||=" atau simpul.operator == "??=") {
+      ini.bacaVariabel(sasaran)
+      jika (simpul.operator == "??=") {
+        tetap lompatNullish = ini.emitLompat(Op.LompatJikaKosong, simpul.baris)
+        tetap lompatAkhir = ini.emitLompat(Op.Lompat, simpul.baris)
+        ini.tambalLompat(lompatNullish)
+        ini.emit(Op.Pop, simpul.baris)
+        ini.ekspresi(simpul.nilai)
+        ini.tulisVariabelTanpaPop(sasaran)
+        ini.tambalLompat(lompatAkhir)
+      } lainnya {
+        tetap op = simpul.operator == "&&=" ? Op.LompatJikaSalah : Op.LompatJikaBenar
+        tetap lompat = ini.emitLompat(op, simpul.baris)
+        ini.emit(Op.Pop, simpul.baris)
+        ini.ekspresi(simpul.nilai)
+        ini.tulisVariabelTanpaPop(sasaran)
+        ini.tambalLompat(lompat)
+      }
+      kembalikan taktentu
+    }
+    ini.bacaVariabel(sasaran)
+    ini.ekspresi(simpul.nilai)
+    ini.emit(ini.opGabungan(simpul), simpul.baris)
+    ini.tulisVariabelTanpaPop(sasaran)
+  }
+
+  penugasanAnggota(simpul, sasaran) {
+    jika (simpul.operator == "&&=" atau simpul.operator == "||=" atau simpul.operator == "??=") {
+      ini.galat(simpul, "Operator \"" + simpul.operator + "\" pada properti belum didukung pada fase ini")
+    }
+    tetap namaKonst = sasaran.terhitung ? -1 : ini.potongan.tambahKonstanta(ini.namaProperti(sasaran.properti))
+
+    jika (simpul.operator == "=") {
+      ini.ekspresi(sasaran.objek)
+      jika (sasaran.terhitung) {
+        ini.ekspresi(sasaran.properti)
+        ini.ekspresi(simpul.nilai)
+        ini.emit(Op.TulisIndeks, simpul.baris)
+      } lainnya {
+        ini.ekspresi(simpul.nilai)
+        ini.emitOperan(Op.TulisProperti, namaKonst, simpul.baris)
+      }
+      kembalikan taktentu
+    }
+
+    jika (sasaran.terhitung) {
+      ini.ekspresi(sasaran.objek)
+      ini.ekspresi(sasaran.properti)
+      ini.emit(Op.Gandakan2, simpul.baris)
+      ini.emit(Op.BacaIndeks, simpul.baris)
+      ini.ekspresi(simpul.nilai)
+      ini.emit(ini.opGabungan(simpul), simpul.baris)
+      ini.emit(Op.TulisIndeks, simpul.baris)
+    } lainnya {
+      ini.ekspresi(sasaran.objek)
+      ini.emit(Op.Gandakan, simpul.baris)
+      ini.emitOperan(Op.BacaProperti, namaKonst, simpul.baris)
+      ini.ekspresi(simpul.nilai)
+      ini.emit(ini.opGabungan(simpul), simpul.baris)
+      ini.emitOperan(Op.TulisProperti, namaKonst, simpul.baris)
+    }
+  }
+
+  opGabungan(simpul) {
+    tetap opDasar = simpul.operator.iris(0, -1)
+    tetap op = OP_BINER.ambil(opDasar)
+    jika (op == taktentu) ini.galat(simpul, "Operator \"" + simpul.operator + "\" belum didukung")
+    kembalikan op
+  }
+
+  pemanggilan(simpul) {
+    jika (simpul.callee.jenis == "Induk") {
+      ini.bacaNama("ini", simpul)
+      ini.bacaNamaSuper(simpul)
+      ini.argumenLalu(simpul)
+      ini.emitOperan(Op.PanggilInduk, simpul.argumen.panjang, simpul.baris)
+      kembalikan taktentu
+    }
+    tetap callee = simpul.callee
+
+    jika (callee.jenis == "AksesAnggota" dan callee.objek.jenis == "Induk") {
+      ini.bacaNama("ini", simpul)
+      ini.bacaNamaSuper(simpul)
+      tetap indeks = ini.potongan.tambahKonstanta(ini.namaProperti(callee.properti))
+      ini.emitOperan(Op.BacaIndukMetode, indeks, simpul.baris)
+      ini.argumenLalu(simpul)
+      ini.emitOperan(Op.PanggilDenganIni, simpul.argumen.panjang, simpul.baris)
+      kembalikan taktentu
+    }
+
+    jika (callee.jenis == "AksesAnggota" dan bukan callee.opsional) {
+      ini.ekspresi(callee.objek)
+      ini.emit(Op.Gandakan, simpul.baris)
+      jika (callee.terhitung) {
+        ini.ekspresi(callee.properti)
+        ini.emit(Op.BacaIndeks, simpul.baris)
+      } lainnya {
+        tetap indeks = ini.potongan.tambahKonstanta(ini.namaProperti(callee.properti))
+        ini.emitOperan(Op.BacaProperti, indeks, simpul.baris)
+      }
+      ini.argumenLalu(simpul)
+      ini.emitOperan(Op.PanggilDenganIni, simpul.argumen.panjang, simpul.baris)
+      kembalikan taktentu
+    }
+
+    ini.ekspresi(callee)
+    ini.argumenLalu(simpul)
+    ini.emitOperan(Op.Panggil, simpul.argumen.panjang, simpul.baris)
+  }
+
+  fungsiLiteral(simpul, nama, kembalikanIni) {
+    tetap namaFungsi = nama != "" ? nama : (simpul.nama ? simpul.nama.nama : (simpul.panah ? "panah" : "anonim"))
+    tetap anak = baru Kompiler(namaFungsi, ini.namaBerkas, ini)
+    jika (bukan simpul.panah) anak.lokal[0].nama = "ini"
+    anak.konstruktorAktif = kembalikanIni
+    anak.fungsi.generator = simpul.generator
+    anak.fungsi.asinkron = simpul.asinkron
+    anak.mulaiScope()
+    anak.siapkanParameter(simpul.parameter)
+
+    jika (simpul.tubuh.jenis == "Blok") {
+      anak.pratindakHoisting(simpul.tubuh.tubuh)
+      untuk (tetap p dari simpul.tubuh.tubuh) anak.pernyataan(p)
+      jika (kembalikanIni) anak.emitOperan(Op.BacaLokal, 0, akhirGaris(simpul))
+      lainnya anak.emit(Op.Taktentu, akhirGaris(simpul))
+      anak.emit(Op.Kembali, akhirGaris(simpul))
+    } lainnya {
+      anak.ekspresi(simpul.tubuh)
+      anak.emit(Op.Kembali, akhirGaris(simpul))
+    }
+
+    tetap indeks = ini.potongan.tambahKonstanta(anak.fungsi)
+    ini.emitOperan(Op.Penutup, indeks, simpul.baris)
+    untuk (tetap u dari anak.upvalue) {
+      ini.emit(u.lokal ? 1 : 0, simpul.baris)
+      ini.emit(u.indeks, simpul.baris)
+    }
+  }
+
+  bacaNamaSuper(simpul) {
+    tetap nama = "\u0000induk"
+    tetap indeksLokal = ini.selesaikanLokal(nama, simpul)
+    jika (indeksLokal != -1) {
+      ini.emitOperan(Op.BacaLokal, indeksLokal, simpul.baris)
+      kembalikan taktentu
+    }
+    tetap indeksUpvalue = ini.selesaikanUpvalue(nama, simpul)
+    jika (indeksUpvalue != -1) {
+      ini.emitOperan(Op.BacaUpvalue, indeksUpvalue, simpul.baris)
+      kembalikan taktentu
+    }
+    ini.galat(simpul, "'induk' hanya tersedia di dalam kelas turunan")
+  }
+
+  imporModul(simpul) {
+    tetap indeksSpec = ini.potongan.tambahKonstanta(simpul.sumber)
+    ini.emitOperan(Op.MuatModul, indeksSpec, simpul.baris)
+    jika (simpul.penentu.panjang == 0) {
+      ini.emit(Op.Pop, simpul.baris)
+      kembalikan taktentu
+    }
+    tetap slotEkspor = ini.deklarasiTemp(simpul)
+    untuk (tetap penentu dari simpul.penentu) {
+      ini.emitOperan(Op.BacaLokal, slotEkspor, simpul.baris)
+      jika (penentu.ragam == "namespace") {
+        ini.bindImpor(penentu.lokal.nama, penentu)
+      } lainnya jika (penentu.ragam == "bawaan") {
+        tetap indeks = ini.potongan.tambahKonstanta("bawaan")
+        ini.emitOperan(Op.BacaProperti, indeks, simpul.baris)
+        ini.bindImpor(penentu.lokal.nama, penentu)
+      } lainnya {
+        tetap indeks = ini.potongan.tambahKonstanta(penentu.impor)
+        ini.emitOperan(Op.BacaProperti, indeks, simpul.baris)
+        ini.bindImpor(penentu.lokal.nama, penentu)
+      }
+    }
+  }
+
+  bindImpor(nama, simpul) {
+    jika (ini.kedalamanScope == 0) {
+      tetap indeks = ini.potongan.tambahKonstanta(nama)
+      ini.globalTetap.tambah(nama)
+      ini.emitOperan(Op.DefinisiGlobal, indeks, simpul.baris)
+    } lainnya {
+      ini.deklarasiLokal(nama, benar, simpul)
+      ini.tandaiSiap()
+    }
+  }
+
+  eksporBernama(simpul) {
+    jika (simpul.sumber != kosong) {
+      ini.galat(simpul, "'ekspor ... dari' belum didukung pada fase ini")
+    }
+    jika (simpul.deklarasi != kosong) {
+      ini.pernyataan(simpul.deklarasi)
+      jika (ini.modeModul) {
+        untuk (tetap nama dari ini.namaDeklarasi(simpul.deklarasi)) {
+          tetap slot = ini.selesaikanLokal(nama, simpul)
+          jika (slot != -1) ini.eksporModul.tambah({ nama: nama, slot: slot })
+        }
+      }
+      kembalikan taktentu
+    }
+    jika (ini.modeModul) {
+      untuk (tetap penentu dari simpul.penentu) {
+        tetap slot = ini.selesaikanLokal(penentu.lokal, simpul)
+        jika (slot == -1) ini.galat(simpul, "Nama \"" + penentu.lokal + "\" tidak ditemukan untuk diekspor")
+        ini.eksporModul.tambah({ nama: penentu.diekspor, slot: slot })
+      }
+    }
+  }
+
+  eksporBawaan(simpul) {
+    tetap nilai = simpul.nilai
+    jika (nilai.jenis == "DeklarasiFungsi") {
+      jika (nilai.fungsi.nama) {
+        ini.pernyataan(nilai)
+        jika (ini.modeModul) ini.slotDefault = ini.selesaikanLokal(nilai.fungsi.nama.nama, simpul)
+      } lainnya {
+        ini.fungsiLiteral(nilai.fungsi, "", salah)
+        ini.simpanDefault(simpul)
+      }
+      kembalikan taktentu
+    }
+    jika (nilai.jenis == "DeklarasiKelas") {
+      jika (nilai.kelas.nama) {
+        ini.pernyataan(nilai)
+        jika (ini.modeModul) ini.slotDefault = ini.selesaikanLokal(nilai.kelas.nama.nama, simpul)
+      } lainnya {
+        ini.kelasEkspresi(nilai.kelas)
+        ini.simpanDefault(simpul)
+      }
+      kembalikan taktentu
+    }
+    ini.ekspresi(nilai)
+    ini.simpanDefault(simpul)
+  }
+
+  simpanDefault(simpul) {
+    jika (ini.modeModul) {
+      ini.slotDefault = ini.deklarasiTemp(simpul)
+    } lainnya {
+      ini.emit(Op.Pop, simpul.baris)
+    }
+  }
+
+  namaDeklarasi(simpul) {
+    jika (simpul.jenis == "DeklarasiFungsi") kembalikan [simpul.fungsi.nama.nama]
+    jika (simpul.jenis == "DeklarasiKelas") kembalikan [simpul.kelas.nama.nama]
+    jika (simpul.jenis == "DeklarasiVariabel") {
+      tetap nama = []
+      untuk (tetap dek dari simpul.deklarasi) {
+        jika (dek.id.jenis == "Identifier") nama.tambah(dek.id.nama)
+      }
+      kembalikan nama
+    }
+    kembalikan []
+  }
+
+  deklarasiKelas(simpul) {
+    tetap nama = simpul.kelas.nama.nama
+    jika (ini.kedalamanScope == 0) {
+      ini.kelasEkspresi(simpul.kelas)
+      tetap indeks = ini.potongan.tambahKonstanta(nama)
+      ini.emitOperan(Op.DefinisiGlobal, indeks, simpul.baris)
+    } lainnya {
+      ini.deklarasiLokal(nama, salah, simpul)
+      ini.kelasEkspresi(simpul.kelas)
+      ini.tandaiSiap()
+    }
+  }
+
+  kelasEkspresi(simpul) {
+    tetap punyaInduk = simpul.induk != kosong
+    misal slotInduk = -1
+    jika (punyaInduk) {
+      ini.ekspresi(simpul.induk)
+      ini.mulaiScope()
+      ini.deklarasiLokal("\u0000induk", benar, simpul)
+      ini.tandaiSiap()
+      slotInduk = ini.lokal.panjang - 1
+    }
+
+    tetap namaKonst = ini.potongan.tambahKonstanta(simpul.nama ? simpul.nama.nama : "anonim")
+    ini.emitOperan(Op.KelasBaru, namaKonst, simpul.baris)
+    jika (punyaInduk) {
+      ini.emitOperan(Op.BacaLokal, slotInduk, simpul.baris)
+      ini.emit(Op.WarisiKelas, simpul.baris)
+    }
+
+    untuk (tetap anggota dari simpul.anggota) {
+      ini.anggotaKelas(anggota)
+    }
+
+    jika (punyaInduk) {
+      ini.emit(Op.SelesaikanKelasInduk, simpul.baris)
+      ini.kedalamanScope = ini.kedalamanScope - 1
+      ini.lokal.hapusAkhir()
+    }
+  }
+
+  anggotaKelas(anggota) {
+    jika (anggota.jenis == "BlokStatis") {
+      tetap fn = ini.sintesisFungsi({ jenis: "Blok", tubuh: anggota.tubuh, baris: anggota.baris, kolom: anggota.kolom, awal: anggota.awal, akhir: anggota.akhir }, anggota)
+      ini.fungsiLiteral(fn, "statis", salah)
+      ini.emit(Op.JalankanStatis, anggota.baris)
+      kembalikan taktentu
+    }
+
+    jika (anggota.jenis == "FieldKelas") {
+      jika (anggota.terhitung) ini.galat(anggota, "Nama field terhitung belum didukung pada fase ini")
+      tetap nama = ini.namaAnggota(anggota.kunci)
+      tetap namaKonst = ini.potongan.tambahKonstanta(nama)
+      jika (anggota.statis) {
+        jika (anggota.nilai) ini.ekspresi(anggota.nilai)
+        lainnya ini.emit(Op.Taktentu, anggota.baris)
+        ini.emitOperan(Op.FieldStatis, namaKonst, anggota.baris)
+      } lainnya {
+        jika (anggota.nilai) {
+          tetap fn = ini.sintesisFungsi(anggota.nilai, anggota)
+          ini.fungsiLiteral(fn, nama, salah)
+        } lainnya {
+          ini.emit(Op.Taktentu, anggota.baris)
+        }
+        ini.emitOperan(Op.FieldInstance, namaKonst, anggota.baris)
+      }
+      kembalikan taktentu
+    }
+
+    jika (anggota.terhitung) ini.galat(anggota, "Nama metode terhitung belum didukung pada fase ini")
+    tetap nama = ini.namaAnggota(anggota.kunci)
+    tetap namaKonst = ini.potongan.tambahKonstanta(nama)
+    tetap konstruktor = anggota.ragam == "konstruktor"
+    ini.fungsiLiteral(anggota.nilai, nama, konstruktor)
+    tetap ragamKode = anggota.ragam == "dapatkan" ? 1 : (anggota.ragam == "tetapkan" ? 2 : (anggota.ragam == "konstruktor" ? 3 : 0))
+    tetap bendera = (anggota.statis ? 1 : 0) | (ragamKode << 1)
+    ini.emit(Op.MetodeKelas, anggota.baris)
+    ini.emit(namaKonst, anggota.baris)
+    ini.emit(bendera, anggota.baris)
+  }
+
+  namaAnggota(kunci) {
+    jika (kunci.jenis == "NamaPrivat") kembalikan "#" + kunci.nama
+    kembalikan ini.namaKunci(kunci)
+  }
+
+  sintesisFungsi(tubuh, acuan) {
+    kembalikan {
+      jenis: "Fungsi",
+      nama: kosong,
+      parameter: [],
+      tubuh: tubuh,
+      asinkron: salah,
+      generator: salah,
+      panah: salah,
+      baris: acuan.baris,
+      kolom: acuan.kolom,
+      awal: acuan.awal,
+      akhir: acuan.akhir,
+    }
+  }
+
+  siapkanParameter(parameter) {
+    tetap prolog = []
+
+    untuk (tetap param dari parameter) {
+      jika (param.jenis == "Identifier") {
+        ini.deklarasiLokal(param.nama, salah, param)
+        ini.tandaiSiap()
+      } lainnya jika (param.jenis == "PolaSisa") {
+        ini.fungsi.punyaSisa = benar
+        tetap arg = param.argumen
+        jika (arg.jenis == "Identifier") {
+          ini.deklarasiLokal(arg.nama, salah, arg)
+          ini.tandaiSiap()
+        } lainnya {
+          tetap slot = ini.deklarasiTemp(param)
+          prolog.tambah({ kind: "pattern", slot: slot, bawaan: kosong, pola: arg })
+        }
+      } lainnya jika (param.jenis == "PolaBawaan") {
+        jika (param.kiri.jenis == "Identifier") {
+          ini.deklarasiLokal(param.kiri.nama, salah, param.kiri)
+          ini.tandaiSiap()
+          prolog.tambah({ kind: "default", slot: ini.lokal.panjang - 1, bawaan: param.bawaan, pola: kosong })
+        } lainnya {
+          tetap slot = ini.deklarasiTemp(param)
+          prolog.tambah({ kind: "default-pattern", slot: slot, bawaan: param.bawaan, pola: param.kiri })
+        }
+      } lainnya {
+        tetap slot = ini.deklarasiTemp(param)
+        prolog.tambah({ kind: "pattern", slot: slot, bawaan: kosong, pola: param })
+      }
+    }
+    ini.fungsi.arity = parameter.panjang
+
+    untuk (tetap tugas dari prolog) {
+      jika (tugas.kind == "default") {
+        ini.prologDefault(tugas.slot, tugas.bawaan, 0)
+      } lainnya jika (tugas.kind == "default-pattern") {
+        ini.prologDefault(tugas.slot, tugas.bawaan, 0)
+        ini.destrukDariSlot(tugas.pola, tugas.slot, "misal")
+      } lainnya {
+        ini.destrukDariSlot(tugas.pola, tugas.slot, "misal")
+      }
+    }
+  }
+
+  prologDefault(slot, bawaan, garis) {
+    ini.emitOperan(Op.BacaLokal, slot, garis)
+    tetap lompatTaktentu = ini.emitLompat(Op.LompatJikaTaktentu, garis)
+    tetap lompatAkhir = ini.emitLompat(Op.Lompat, garis)
+    ini.tambalLompat(lompatTaktentu)
+    ini.emit(Op.Pop, garis)
+    ini.ekspresi(bawaan)
+    ini.emitOperan(Op.TulisLokal, slot, garis)
+    ini.tambalLompat(lompatAkhir)
+    ini.emit(Op.Pop, garis)
+  }
+
+  bacaVariabel(simpul) {
+    ini.bacaNama(simpul.nama, simpul)
+  }
+
+  bacaNama(nama, simpul) {
+    tetap indeksLokal = ini.selesaikanLokal(nama, simpul)
+    jika (indeksLokal != -1) {
+      ini.emitOperan(Op.BacaLokal, indeksLokal, simpul.baris)
+      kembalikan taktentu
+    }
+    tetap indeksUpvalue = ini.selesaikanUpvalue(nama, simpul)
+    jika (indeksUpvalue != -1) {
+      ini.emitOperan(Op.BacaUpvalue, indeksUpvalue, simpul.baris)
+      kembalikan taktentu
+    }
+    tetap indeks = ini.potongan.tambahKonstanta(nama)
+    ini.emitOperan(Op.BacaGlobal, indeks, simpul.baris)
+  }
+
+  tulisVariabelTanpaPop(simpul) {
+    ini.tulisNama(simpul.nama, simpul)
+  }
+
+  tulisNama(nama, simpul) {
+    tetap indeksLokal = ini.selesaikanLokal(nama, simpul)
+    jika (indeksLokal != -1) {
+      jika (ini.lokal[indeksLokal].tetap) {
+        ini.galat(simpul, "Tidak dapat menugaskan ulang ke konstanta \"" + nama + "\"")
+      }
+      ini.emitOperan(Op.TulisLokal, indeksLokal, simpul.baris)
+      kembalikan taktentu
+    }
+    tetap indeksUpvalue = ini.selesaikanUpvalue(nama, simpul)
+    jika (indeksUpvalue != -1) {
+      ini.emitOperan(Op.TulisUpvalue, indeksUpvalue, simpul.baris)
+      kembalikan taktentu
+    }
+    jika (ini.globalTetap.punya(nama)) {
+      ini.galat(simpul, "Tidak dapat menugaskan ulang ke konstanta \"" + nama + "\"")
+    }
+    tetap indeks = ini.potongan.tambahKonstanta(nama)
+    ini.emitOperan(Op.TulisGlobal, indeks, simpul.baris)
+  }
+
+  larik(simpul) {
+    ini.emit(Op.LarikBaru, simpul.baris)
+    untuk (tetap elemen dari simpul.elemen) {
+      jika (elemen.jenis == "Sebar") {
+        ini.ekspresi(elemen.argumen)
+        ini.emit(Op.LarikSebar, simpul.baris)
+      } lainnya {
+        ini.ekspresi(elemen)
+        ini.emit(Op.LarikTambah, simpul.baris)
+      }
+    }
+  }
+
+  objek(simpul) {
+    ini.emit(Op.ObjekBaru, simpul.baris)
+    untuk (tetap prop dari simpul.properti) {
+      jika (prop.jenis == "Sebar") {
+        ini.ekspresi(prop.argumen)
+        ini.emit(Op.ObjekSebar, simpul.baris)
+        lanjut
+      }
+      jika (prop.ragam != "init") {
+        ini.galat(prop, "Getter/setter pada objek literal belum didukung pada fase ini")
+      }
+      jika (prop.terhitung) {
+        ini.ekspresi(prop.kunci)
+        ini.ekspresi(prop.nilai)
+        ini.emit(Op.ObjekPropDinamis, simpul.baris)
+      } lainnya {
+        ini.ekspresi(prop.nilai)
+        tetap indeks = ini.potongan.tambahKonstanta(ini.namaKunci(prop.kunci))
+        ini.emitOperan(Op.ObjekProp, indeks, simpul.baris)
+      }
+    }
+  }
+
+  namaKunci(kunci) {
+    jika (kunci.jenis == "Identifier") kembalikan kunci.nama
+    jika (kunci.jenis == "LiteralTeks") kembalikan kunci.nilai
+    jika (kunci.jenis == "LiteralAngka") kembalikan Teks(kunci.nilai)
+    ini.galat(kunci, "Nama properti tidak valid")
+  }
+
+  aksesAnggota(simpul) {
+    ini.ekspresi(simpul.objek)
+    jika (simpul.terhitung) {
+      ini.ekspresi(simpul.properti)
+      ini.emit(Op.BacaIndeks, simpul.baris)
+    } lainnya {
+      tetap nama = ini.namaProperti(simpul.properti)
+      tetap indeks = ini.potongan.tambahKonstanta(nama)
+      ini.emitOperan(Op.BacaProperti, indeks, simpul.baris)
+    }
+  }
+
+  namaProperti(properti) {
+    jika (properti.jenis == "Identifier") kembalikan properti.nama
+    jika (properti.jenis == "NamaPrivat") kembalikan "#" + properti.nama
+    ini.galat(properti, "Nama properti tidak valid")
+  }
+
+  baru(simpul) {
+    ini.ekspresi(simpul.callee)
+    untuk (tetap arg dari simpul.argumen) {
+      jika (arg.jenis == "Sebar") ini.galat(arg, "Sebar argumen belum didukung pada fase ini")
+      ini.ekspresi(arg)
+    }
+    ini.emitOperan(Op.Konstruksi, simpul.argumen.panjang, simpul.baris)
+  }
+
+  rantaiOpsional(simpul) {
+    tetap tambalan = []
+    ini.ekspresiRantai(simpul.ekspresi, tambalan)
+    jika (tambalan.panjang == 0) kembalikan taktentu
+    tetap lompatAkhir = ini.emitLompat(Op.Lompat, simpul.baris)
+    untuk (tetap slot dari tambalan) ini.tambalLompat(slot)
+    ini.emit(Op.Pop, simpul.baris)
+    ini.emit(Op.Taktentu, simpul.baris)
+    ini.tambalLompat(lompatAkhir)
+  }
+
+  ekspresiRantai(simpul, tambalan) {
+    jika (simpul.jenis == "AksesAnggota") {
+      ini.ekspresiRantai(simpul.objek, tambalan)
+      jika (simpul.opsional) tambalan.tambah(ini.emitLompat(Op.LompatJikaKosong, simpul.baris))
+      jika (simpul.terhitung) {
+        ini.ekspresi(simpul.properti)
+        ini.emit(Op.BacaIndeks, simpul.baris)
+      } lainnya {
+        tetap indeks = ini.potongan.tambahKonstanta(ini.namaProperti(simpul.properti))
+        ini.emitOperan(Op.BacaProperti, indeks, simpul.baris)
+      }
+      kembalikan taktentu
+    }
+    jika (simpul.jenis == "Pemanggilan") {
+      jika (simpul.opsional) {
+        ini.ekspresiRantai(simpul.callee, tambalan)
+        tambalan.tambah(ini.emitLompat(Op.LompatJikaKosong, simpul.baris))
+        untuk (tetap arg dari simpul.argumen) {
+          jika (arg.jenis == "Sebar") ini.galat(arg, "Sebar argumen belum didukung pada fase ini")
+          ini.ekspresi(arg)
+        }
+        ini.emitOperan(Op.Panggil, simpul.argumen.panjang, simpul.baris)
+        kembalikan taktentu
+      }
+      ini.pemanggilanDalamRantai(simpul, tambalan)
+      kembalikan taktentu
+    }
+    ini.ekspresi(simpul)
+  }
+
+  pemanggilanDalamRantai(simpul, tambalan) {
+    tetap callee = simpul.callee
+    jika (callee.jenis == "AksesAnggota" dan bukan callee.terhitung) {
+      ini.ekspresiRantai(callee.objek, tambalan)
+      ini.emit(Op.Gandakan, simpul.baris)
+      tetap indeks = ini.potongan.tambahKonstanta(ini.namaProperti(callee.properti))
+      ini.emitOperan(Op.BacaProperti, indeks, simpul.baris)
+      ini.argumenLalu(simpul)
+      ini.emitOperan(Op.PanggilDenganIni, simpul.argumen.panjang, simpul.baris)
+      kembalikan taktentu
+    }
+    ini.ekspresiRantai(callee, tambalan)
+    ini.argumenLalu(simpul)
+    ini.emitOperan(Op.Panggil, simpul.argumen.panjang, simpul.baris)
+  }
+
+  argumenLalu(simpul) {
+    untuk (tetap arg dari simpul.argumen) {
+      jika (arg.jenis == "Sebar") ini.galat(arg, "Sebar argumen belum didukung pada fase ini")
+      ini.ekspresi(arg)
+    }
+  }
+}
+
+ekspor fungsi kompilasiProgram(program, namaBerkas) {
+  tetap kompiler = baru Kompiler("<skrip>", namaBerkas, kosong)
+  kompiler.pratindakHoisting(program.tubuh)
+  untuk (tetap pernyataan dari program.tubuh) {
+    kompiler.pernyataan(pernyataan)
+  }
+  kompiler.emit(Op.Taktentu, akhirGaris(program))
+  kompiler.emit(Op.Kembali, akhirGaris(program))
+  kembalikan kompiler.fungsi
+}
+
+ekspor fungsi kompilasiModul(program, namaBerkas) {
+  tetap kompiler = baru Kompiler("<modul>", namaBerkas, kosong)
+  kompiler.modeModul = benar
+  kompiler.mulaiScope()
+  tetap imporDaftar = program.tubuh.saring((p) => p.jenis == "Impor")
+  tetap lain = program.tubuh.saring((p) => p.jenis != "Impor")
+  kompiler.pratindakHoisting(lain)
+  untuk (tetap p dari imporDaftar) kompiler.pernyataan(p)
+  untuk (tetap p dari lain) kompiler.pernyataan(p)
+  kompiler.emit(Op.ObjekBaru, akhirGaris(program))
+  untuk (tetap e dari kompiler.eksporModul) {
+    kompiler.emitOperan(Op.BacaLokal, e.slot, akhirGaris(program))
+    tetap indeks = kompiler.potongan.tambahKonstanta(e.nama)
+    kompiler.emitOperan(Op.ObjekProp, indeks, akhirGaris(program))
+  }
+  jika (kompiler.slotDefault != -1) {
+    kompiler.emitOperan(Op.BacaLokal, kompiler.slotDefault, akhirGaris(program))
+    tetap indeks = kompiler.potongan.tambahKonstanta("bawaan")
+    kompiler.emitOperan(Op.ObjekProp, indeks, akhirGaris(program))
+  }
+  kompiler.emit(Op.Kembali, akhirGaris(program))
+  kembalikan kompiler.fungsi
+}

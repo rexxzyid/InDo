@@ -1,0 +1,21 @@
+fungsi mainkan(rahasia, tebakan) {
+  tetap riwayat = []
+  untuk (tetap t dari tebakan) {
+    jika (t == rahasia) {
+      riwayat.tambah(t + " -> tepat!")
+      henti
+    } lainnya jika (t < rahasia) {
+      riwayat.tambah(t + " -> terlalu kecil")
+    } lainnya {
+      riwayat.tambah(t + " -> terlalu besar")
+    }
+  }
+  kembalikan riwayat
+}
+
+tetap rahasia = 42
+tetap percobaan = [10, 60, 40, 45, 42]
+
+untuk (tetap baris dari mainkan(rahasia, percobaan)) {
+  cetak(baris)
+}

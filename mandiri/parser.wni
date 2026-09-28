@@ -1,0 +1,1369 @@
+impor { tokenisasi } dari "./lexer.wni"
+impor { uraiAngka, uraiBilanganBesar, uraiTeks, irisTemplate, masakTemplate } dari "./literal.wni"
+
+tetap BP_BINER = baru Peta()
+BP_BINER.tetapkan("Nullish", 1)
+BP_BINER.tetapkan("AtauAtau", 2)
+BP_BINER.tetapkan("DanDan", 3)
+BP_BINER.tetapkan("Atau", 4)
+BP_BINER.tetapkan("Xor", 5)
+BP_BINER.tetapkan("Dan", 6)
+BP_BINER.tetapkan("SamaSama", 7)
+BP_BINER.tetapkan("TidakSama", 7)
+BP_BINER.tetapkan("SamaSamaSama", 7)
+BP_BINER.tetapkan("TidakSamaSama", 7)
+BP_BINER.tetapkan("KurangDari", 8)
+BP_BINER.tetapkan("LebihDari", 8)
+BP_BINER.tetapkan("KurangSamaDari", 8)
+BP_BINER.tetapkan("LebihSamaDari", 8)
+BP_BINER.tetapkan("KkContohdari", 8)
+BP_BINER.tetapkan("KkDalam", 8)
+BP_BINER.tetapkan("GeserKiri", 9)
+BP_BINER.tetapkan("GeserKanan", 9)
+BP_BINER.tetapkan("GeserKananNol", 9)
+BP_BINER.tetapkan("Tambah", 10)
+BP_BINER.tetapkan("Kurang", 10)
+BP_BINER.tetapkan("Kali", 11)
+BP_BINER.tetapkan("Bagi", 11)
+BP_BINER.tetapkan("Sisa", 11)
+BP_BINER.tetapkan("Pangkat", 12)
+
+tetap OPERATOR_LOGIKA = baru Himpunan(["DanDan", "AtauAtau", "Nullish"])
+
+tetap OPERATOR_PENUGASAN = baru Peta()
+OPERATOR_PENUGASAN.tetapkan("SamaDengan", "=")
+OPERATOR_PENUGASAN.tetapkan("TambahSama", "+=")
+OPERATOR_PENUGASAN.tetapkan("KurangSama", "-=")
+OPERATOR_PENUGASAN.tetapkan("KaliSama", "*=")
+OPERATOR_PENUGASAN.tetapkan("BagiSama", "/=")
+OPERATOR_PENUGASAN.tetapkan("SisaSama", "%=")
+OPERATOR_PENUGASAN.tetapkan("PangkatSama", "**=")
+OPERATOR_PENUGASAN.tetapkan("DanDanSama", "&&=")
+OPERATOR_PENUGASAN.tetapkan("AtauAtauSama", "||=")
+OPERATOR_PENUGASAN.tetapkan("NullishSama", "??=")
+OPERATOR_PENUGASAN.tetapkan("DanSama", "&=")
+OPERATOR_PENUGASAN.tetapkan("AtauSama", "|=")
+OPERATOR_PENUGASAN.tetapkan("XorSama", "^=")
+OPERATOR_PENUGASAN.tetapkan("GeserKiriSama", "<<=")
+OPERATOR_PENUGASAN.tetapkan("GeserKananSama", ">>=")
+OPERATOR_PENUGASAN.tetapkan("GeserKananNolSama", ">>>=")
+
+tetap TEKS_OPERATOR = baru Peta()
+TEKS_OPERATOR.tetapkan("Tambah", "+")
+TEKS_OPERATOR.tetapkan("Kurang", "-")
+TEKS_OPERATOR.tetapkan("Kali", "*")
+TEKS_OPERATOR.tetapkan("Bagi", "/")
+TEKS_OPERATOR.tetapkan("Sisa", "%")
+TEKS_OPERATOR.tetapkan("Pangkat", "**")
+TEKS_OPERATOR.tetapkan("Dan", "&")
+TEKS_OPERATOR.tetapkan("Atau", "|")
+TEKS_OPERATOR.tetapkan("Xor", "^")
+TEKS_OPERATOR.tetapkan("GeserKiri", "<<")
+TEKS_OPERATOR.tetapkan("GeserKanan", ">>")
+TEKS_OPERATOR.tetapkan("GeserKananNol", ">>>")
+TEKS_OPERATOR.tetapkan("SamaSama", "==")
+TEKS_OPERATOR.tetapkan("TidakSama", "!=")
+TEKS_OPERATOR.tetapkan("SamaSamaSama", "===")
+TEKS_OPERATOR.tetapkan("TidakSamaSama", "!==")
+TEKS_OPERATOR.tetapkan("KurangDari", "<")
+TEKS_OPERATOR.tetapkan("LebihDari", ">")
+TEKS_OPERATOR.tetapkan("KurangSamaDari", "<=")
+TEKS_OPERATOR.tetapkan("LebihSamaDari", ">=")
+TEKS_OPERATOR.tetapkan("KkContohdari", "contohdari")
+TEKS_OPERATOR.tetapkan("KkDalam", "dalam")
+TEKS_OPERATOR.tetapkan("DanDan", "&&")
+TEKS_OPERATOR.tetapkan("AtauAtau", "||")
+TEKS_OPERATOR.tetapkan("Nullish", "??")
+TEKS_OPERATOR.tetapkan("Seru", "!")
+TEKS_OPERATOR.tetapkan("Tilde", "~")
+TEKS_OPERATOR.tetapkan("KkJenisdari", "jenisdari")
+TEKS_OPERATOR.tetapkan("KkAbaikan", "abaikan")
+TEKS_OPERATOR.tetapkan("KkHapus", "hapus")
+
+tetap NAMA_TAMPIL = baru Peta()
+NAMA_TAMPIL.tetapkan("KurungBuka", "(")
+NAMA_TAMPIL.tetapkan("KurungTutup", ")")
+NAMA_TAMPIL.tetapkan("KurawalBuka", "{")
+NAMA_TAMPIL.tetapkan("KurawalTutup", "}")
+NAMA_TAMPIL.tetapkan("SikuBuka", "[")
+NAMA_TAMPIL.tetapkan("SikuTutup", "]")
+NAMA_TAMPIL.tetapkan("Koma", ",")
+NAMA_TAMPIL.tetapkan("TitikKoma", ";")
+NAMA_TAMPIL.tetapkan("TitikDua", ":")
+NAMA_TAMPIL.tetapkan("Titik", ".")
+NAMA_TAMPIL.tetapkan("SamaDengan", "=")
+NAMA_TAMPIL.tetapkan("AkhirBerkas", "akhir berkas")
+
+tetap KATA_KUNCI_LUNAK = baru Himpunan([
+  "KkDari",
+  "KkSebagai",
+  "KkDapatkan",
+  "KkTetapkan",
+  "KkStatis",
+  "KkKonstruktor",
+  "KkBawaan",
+])
+
+fungsi namaTampilToken(jenis) {
+  kembalikan NAMA_TAMPIL.ambil(jenis) ?? jenis
+}
+
+fungsi indeksTerakhirDari(teks, cari) {
+  misal i = teks.panjang - 1
+  selama (i >= 0) {
+    jika (teks[i] == cari) kembalikan i
+    i = i - 1
+  }
+  kembalikan -1
+}
+
+kelas Parser {
+  konstruktor(sumber, namaBerkas) {
+    ini.sumber = sumber
+    ini.namaBerkas = namaBerkas ?? "<masukan>"
+    ini.token = tokenisasi(sumber, ini.namaBerkas)
+    ini.i = 0
+    ini.izinkanDalam = benar
+  }
+
+  puncak(offset = 0) {
+    tetap indeks = Matematika.min(ini.i + offset, ini.token.panjang - 1)
+    kembalikan ini.token[indeks]
+  }
+
+  jenis() {
+    kembalikan ini.puncak().jenis
+  }
+
+  maju() {
+    tetap token = ini.puncak()
+    jika (ini.i < ini.token.panjang - 1) ini.i = ini.i + 1
+    kembalikan token
+  }
+
+  cocok(jenis) {
+    jika (ini.jenis() == jenis) {
+      ini.maju()
+      kembalikan benar
+    }
+    kembalikan salah
+  }
+
+  harap(jenis, pesan) {
+    jika (ini.jenis() == jenis) kembalikan ini.maju()
+    tetap token = ini.puncak()
+    ini.galatDi(token, pesan ?? ("Diharapkan \"" + namaTampilToken(jenis) + "\" tetapi menemukan \"" + ini.tampilToken(token) + "\""))
+  }
+
+  tampilToken(token) {
+    jika (token.jenis == "AkhirBerkas") kembalikan "akhir berkas"
+    kembalikan token.teks
+  }
+
+  galatDi(token, pesan) {
+    tetap g = baru GalatSintaks(pesan)
+    g.baris = token.baris
+    g.kolom = token.kolom
+    g.panjang = Matematika.maks(1, token.akhir - token.awal)
+    g.namaBerkas = ini.namaBerkas
+    lempar g
+  }
+
+  buat(awal, data) {
+    tetap akhirToken = ini.token[Matematika.maks(0, ini.i - 1)]
+    data.baris = awal.baris
+    data.kolom = awal.kolom
+    data.awal = awal.awal
+    data.akhir = akhirToken.akhir
+    kembalikan data
+  }
+
+  ulang(acuan, data) {
+    data.baris = acuan.baris
+    data.kolom = acuan.kolom
+    data.awal = acuan.awal
+    data.akhir = acuan.akhir
+    kembalikan data
+  }
+
+  uraiProgram() {
+    tetap awal = ini.puncak()
+    tetap tubuh = []
+    selama (ini.jenis() != "AkhirBerkas") {
+      tubuh.tambah(ini.uraiPernyataan())
+    }
+    kembalikan ini.buat(awal, { jenis: "Program", tubuh: tubuh })
+  }
+
+  akhiriPernyataan() {
+    jika (ini.cocok("TitikKoma")) kembalikan taktentu
+    tetap token = ini.puncak()
+    jika (token.jenis == "AkhirBerkas" atau token.jenis == "KurawalTutup") kembalikan taktentu
+    jika (token.didahuluiBarisBaru) kembalikan taktentu
+    ini.galatDi(token, "Diharapkan \";\" atau baris baru setelah pernyataan")
+  }
+
+  uraiPernyataan() {
+    tetap jenis = ini.jenis()
+    jika (jenis == "KkMisal" atau jenis == "KkTetap" atau jenis == "KkVar") kembalikan ini.uraiDeklarasiVariabel(benar)
+    jika (jenis == "KurawalBuka") kembalikan ini.uraiBlok()
+    jika (jenis == "TitikKoma") {
+      tetap awalKosong = ini.maju()
+      kembalikan ini.buat(awalKosong, { jenis: "PernyataanKosong" })
+    }
+    jika (jenis == "KkJika") kembalikan ini.uraiJika()
+    jika (jenis == "KkPilih") kembalikan ini.uraiPilih()
+    jika (jenis == "KkSelama") kembalikan ini.uraiSelama()
+    jika (jenis == "KkLakukan") kembalikan ini.uraiLakukanSelama()
+    jika (jenis == "KkUntuk") kembalikan ini.uraiUntuk()
+    jika (jenis == "KkHenti" atau jenis == "KkLanjut") kembalikan ini.uraiHentiLanjut()
+    jika (jenis == "KkKembalikan") kembalikan ini.uraiKembalikan()
+    jika (jenis == "KkLempar") kembalikan ini.uraiLempar()
+    jika (jenis == "KkCoba") kembalikan ini.uraiCoba()
+    jika (jenis == "KkFungsi") kembalikan ini.uraiDeklarasiFungsi(salah)
+    jika (jenis == "KkKelas") kembalikan ini.uraiDeklarasiKelas()
+    jika (jenis == "KkImpor") {
+      jika (bukan (ini.puncak(1).jenis == "KurungBuka" atau ini.puncak(1).jenis == "Titik")) kembalikan ini.uraiImpor()
+    }
+    jika (jenis == "KkEkspor") kembalikan ini.uraiEkspor()
+    jika (jenis == "KkAsinkron") {
+      jika (ini.puncak(1).jenis == "KkFungsi" dan bukan ini.puncak(1).didahuluiBarisBaru) kembalikan ini.uraiDeklarasiFungsi(benar)
+    }
+
+    jika (jenis == "Identifier" dan ini.puncak(1).jenis == "TitikDua") kembalikan ini.uraiBerlabel()
+
+    tetap awal = ini.puncak()
+    tetap ekspresi = ini.uraiEkspresi()
+    ini.akhiriPernyataan()
+    kembalikan ini.buat(awal, { jenis: "PernyataanEkspresi", ekspresi: ekspresi })
+  }
+
+  uraiBlok() {
+    tetap awal = ini.harap("KurawalBuka")
+    tetap tubuh = []
+    selama (ini.jenis() != "KurawalTutup" dan ini.jenis() != "AkhirBerkas") {
+      tubuh.tambah(ini.uraiPernyataan())
+    }
+    ini.harap("KurawalTutup")
+    kembalikan ini.buat(awal, { jenis: "Blok", tubuh: tubuh })
+  }
+
+  uraiDeklarasiVariabel(bolehAkhiri = benar) {
+    tetap awal = ini.maju()
+    tetap ragam = awal.teks
+    tetap deklarasi = []
+    lakukan {
+      tetap awalDek = ini.puncak()
+      tetap id = ini.uraiPola()
+      misal awalNilai = kosong
+      jika (ini.cocok("SamaDengan")) {
+        awalNilai = ini.uraiPenugasan()
+      }
+      deklarasi.tambah(ini.buat(awalDek, { jenis: "Deklarator", id: id, awalNilai: awalNilai }))
+    } selama (ini.cocok("Koma"))
+    jika (bolehAkhiri) ini.akhiriPernyataan()
+    kembalikan ini.buat(awal, { jenis: "DeklarasiVariabel", ragam: ragam, deklarasi: deklarasi })
+  }
+
+  uraiJika() {
+    tetap awal = ini.harap("KkJika")
+    ini.harap("KurungBuka")
+    tetap uji = ini.uraiEkspresi()
+    ini.harap("KurungTutup")
+    tetap konsekuen = ini.uraiPernyataan()
+    misal alternatif = kosong
+    jika (ini.cocok("KkLainnya")) {
+      alternatif = ini.uraiPernyataan()
+    }
+    kembalikan ini.buat(awal, { jenis: "Jika", uji: uji, konsekuen: konsekuen, alternatif: alternatif })
+  }
+
+  uraiPilih() {
+    tetap awal = ini.harap("KkPilih")
+    ini.harap("KurungBuka")
+    tetap diskriminan = ini.uraiEkspresi()
+    ini.harap("KurungTutup")
+    ini.harap("KurawalBuka")
+    tetap daftarKasus = []
+    selama (ini.jenis() != "KurawalTutup" dan ini.jenis() != "AkhirBerkas") {
+      tetap awalKasus = ini.puncak()
+      misal uji = kosong
+      jika (ini.cocok("KkKasus")) {
+        uji = ini.uraiEkspresi()
+      } lainnya {
+        ini.harap("KkBawaan")
+      }
+      ini.harap("TitikDua")
+      tetap tubuh = []
+      selama (ini.jenis() != "KkKasus" dan ini.jenis() != "KkBawaan" dan ini.jenis() != "KurawalTutup" dan ini.jenis() != "AkhirBerkas") {
+        tubuh.tambah(ini.uraiPernyataan())
+      }
+      daftarKasus.tambah(ini.buat(awalKasus, { jenis: "Kasus", uji: uji, tubuh: tubuh }))
+    }
+    ini.harap("KurawalTutup")
+    kembalikan ini.buat(awal, { jenis: "Pilih", diskriminan: diskriminan, kasus: daftarKasus })
+  }
+
+  uraiSelama() {
+    tetap awal = ini.harap("KkSelama")
+    ini.harap("KurungBuka")
+    tetap uji = ini.uraiEkspresi()
+    ini.harap("KurungTutup")
+    tetap tubuh = ini.uraiPernyataan()
+    kembalikan ini.buat(awal, { jenis: "Selama", uji: uji, tubuh: tubuh })
+  }
+
+  uraiLakukanSelama() {
+    tetap awal = ini.harap("KkLakukan")
+    tetap tubuh = ini.uraiPernyataan()
+    ini.harap("KkSelama")
+    ini.harap("KurungBuka")
+    tetap uji = ini.uraiEkspresi()
+    ini.harap("KurungTutup")
+    ini.akhiriPernyataan()
+    kembalikan ini.buat(awal, { jenis: "LakukanSelama", tubuh: tubuh, uji: uji })
+  }
+
+  uraiUntuk() {
+    tetap awal = ini.harap("KkUntuk")
+    tetap tungguKw = ini.cocok("KkTunggu")
+    ini.harap("KurungBuka")
+
+    misal kidal = kosong
+    jika (ini.jenis() == "TitikKoma") {
+      kidal = kosong
+    } lainnya jika (ini.jenis() == "KkMisal" atau ini.jenis() == "KkTetap" atau ini.jenis() == "KkVar") {
+      tetap simpanDalam = ini.izinkanDalam
+      ini.izinkanDalam = salah
+      kidal = ini.uraiDeklarasiVariabelUntuk()
+      ini.izinkanDalam = simpanDalam
+    } lainnya {
+      tetap simpanDalam = ini.izinkanDalam
+      ini.izinkanDalam = salah
+      kidal = ini.uraiEkspresi()
+      ini.izinkanDalam = simpanDalam
+    }
+
+    jika (ini.jenis() == "KkDari") {
+      ini.maju()
+      tetap kanan = ini.uraiPenugasan()
+      ini.harap("KurungTutup")
+      tetap tubuh = ini.uraiPernyataan()
+      tetap kidalAkhir = ini.jadikanTargetIterasi(kidal)
+      kembalikan ini.buat(awal, { jenis: "UntukDari", kidal: kidalAkhir, kanan: kanan, tubuh: tubuh, tunggu: tungguKw })
+    }
+
+    jika (ini.jenis() == "KkDalam") {
+      ini.maju()
+      tetap kanan = ini.uraiEkspresi()
+      ini.harap("KurungTutup")
+      tetap tubuh = ini.uraiPernyataan()
+      tetap kidalAkhir = ini.jadikanTargetIterasi(kidal)
+      kembalikan ini.buat(awal, { jenis: "UntukDalam", kidal: kidalAkhir, kanan: kanan, tubuh: tubuh })
+    }
+
+    tetap init = kidal
+    ini.harap("TitikKoma")
+    tetap uji = ini.jenis() == "TitikKoma" ? kosong : ini.uraiEkspresi()
+    ini.harap("TitikKoma")
+    tetap perbarui = ini.jenis() == "KurungTutup" ? kosong : ini.uraiEkspresi()
+    ini.harap("KurungTutup")
+    tetap tubuhKlasik = ini.uraiPernyataan()
+    kembalikan ini.buat(awal, { jenis: "UntukKlasik", init: init, uji: uji, perbarui: perbarui, tubuh: tubuhKlasik })
+  }
+
+  uraiDeklarasiVariabelUntuk() {
+    tetap awal = ini.maju()
+    tetap ragam = awal.teks
+    tetap deklarasi = []
+    tetap awalDek = ini.puncak()
+    tetap id = ini.uraiPola()
+    misal awalNilai = kosong
+    jika (ini.cocok("SamaDengan")) {
+      awalNilai = ini.uraiPenugasan()
+    }
+    deklarasi.tambah(ini.buat(awalDek, { jenis: "Deklarator", id: id, awalNilai: awalNilai }))
+    selama (ini.cocok("Koma")) {
+      tetap awalLain = ini.puncak()
+      tetap idLain = ini.uraiPola()
+      misal nilaiLain = kosong
+      jika (ini.cocok("SamaDengan")) nilaiLain = ini.uraiPenugasan()
+      deklarasi.tambah(ini.buat(awalLain, { jenis: "Deklarator", id: idLain, awalNilai: nilaiLain }))
+    }
+    kembalikan ini.buat(awal, { jenis: "DeklarasiVariabel", ragam: ragam, deklarasi: deklarasi })
+  }
+
+  jadikanTargetIterasi(kidal) {
+    jika (kidal == kosong) ini.galatDi(ini.puncak(), "Target iterasi tidak boleh kosong")
+    jika (kidal.jenis == "DeklarasiVariabel") kembalikan kidal
+    kembalikan ini.kePola(kidal)
+  }
+
+  uraiHentiLanjut() {
+    tetap awal = ini.maju()
+    misal label = kosong
+    jika (ini.jenis() == "Identifier" dan bukan ini.puncak().didahuluiBarisBaru) {
+      label = ini.uraiIdentifier()
+    }
+    ini.akhiriPernyataan()
+    jika (awal.jenis == "KkHenti") kembalikan ini.buat(awal, { jenis: "Henti", label: label })
+    kembalikan ini.buat(awal, { jenis: "Lanjut", label: label })
+  }
+
+  uraiKembalikan() {
+    tetap awal = ini.harap("KkKembalikan")
+    misal argumen = kosong
+    tetap token = ini.puncak()
+    jika (token.jenis != "TitikKoma" dan token.jenis != "KurawalTutup" dan token.jenis != "AkhirBerkas" dan bukan token.didahuluiBarisBaru) {
+      argumen = ini.uraiEkspresi()
+    }
+    ini.akhiriPernyataan()
+    kembalikan ini.buat(awal, { jenis: "Kembalikan", argumen: argumen })
+  }
+
+  uraiLempar() {
+    tetap awal = ini.harap("KkLempar")
+    jika (ini.puncak().didahuluiBarisBaru) ini.galatDi(ini.puncak(), "Ekspresi 'lempar' tidak boleh diawali baris baru")
+    tetap argumen = ini.uraiEkspresi()
+    ini.akhiriPernyataan()
+    kembalikan ini.buat(awal, { jenis: "Lempar", argumen: argumen })
+  }
+
+  uraiCoba() {
+    tetap awal = ini.harap("KkCoba")
+    tetap blok = ini.uraiBlok()
+    misal penangkap = kosong
+    misal akhirnyaBlok = kosong
+    jika (ini.jenis() == "KkTangkap") {
+      tetap awalTangkap = ini.maju()
+      misal param = kosong
+      jika (ini.cocok("KurungBuka")) {
+        param = ini.uraiPola()
+        ini.harap("KurungTutup")
+      }
+      tetap tubuh = ini.uraiBlok()
+      penangkap = ini.buat(awalTangkap, { jenis: "Penangkap", param: param, tubuh: tubuh })
+    }
+    jika (ini.cocok("KkAkhirnya")) {
+      akhirnyaBlok = ini.uraiBlok()
+    }
+    jika (penangkap == kosong dan akhirnyaBlok == kosong) {
+      ini.galatDi(awal, "'coba' harus punya 'tangkap' atau 'akhirnya'")
+    }
+    kembalikan ini.buat(awal, { jenis: "Coba", blok: blok, penangkap: penangkap, akhirnya: akhirnyaBlok })
+  }
+
+  uraiBerlabel() {
+    tetap awal = ini.puncak()
+    tetap label = ini.uraiIdentifier()
+    ini.harap("TitikDua")
+    tetap tubuh = ini.uraiPernyataan()
+    kembalikan ini.buat(awal, { jenis: "Berlabel", label: label, tubuh: tubuh })
+  }
+
+  uraiDeklarasiFungsi(asink) {
+    tetap awal = ini.puncak()
+    tetap simpulFungsi = ini.uraiFungsi(asink, benar)
+    kembalikan ini.buat(awal, { jenis: "DeklarasiFungsi", fungsi: simpulFungsi })
+  }
+
+  uraiFungsi(asink, wajibNama) {
+    tetap awal = ini.puncak()
+    jika (asink) ini.harap("KkAsinkron")
+    ini.harap("KkFungsi")
+    tetap generator = ini.cocok("Kali")
+    misal nama = kosong
+    jika (ini.jenis() == "Identifier" atau ini.bisaJadiNama(ini.jenis())) {
+      nama = ini.uraiIdentifier()
+    } lainnya jika (wajibNama) {
+      ini.galatDi(ini.puncak(), "Deklarasi fungsi harus punya nama")
+    }
+    tetap parameter = ini.uraiDaftarParameter()
+    tetap tubuh = ini.uraiBlok()
+    kembalikan ini.buat(awal, { jenis: "Fungsi", nama: nama, parameter: parameter, tubuh: tubuh, asinkron: asink, generator: generator, panah: salah })
+  }
+
+  uraiDaftarParameter() {
+    ini.harap("KurungBuka")
+    tetap parameter = []
+    selama (ini.jenis() != "KurungTutup") {
+      jika (ini.jenis() == "Elipsis") {
+        parameter.tambah(ini.uraiPolaSisa())
+        henti
+      }
+      parameter.tambah(ini.uraiPolaDenganBawaan())
+      jika (bukan ini.cocok("Koma")) henti
+    }
+    ini.harap("KurungTutup")
+    kembalikan parameter
+  }
+
+  uraiDeklarasiKelas() {
+    tetap awal = ini.puncak()
+    tetap simpulKelas = ini.uraiKelas(benar)
+    kembalikan ini.buat(awal, { jenis: "DeklarasiKelas", kelas: simpulKelas })
+  }
+
+  uraiKelas(wajibNama) {
+    tetap awal = ini.harap("KkKelas")
+    misal nama = kosong
+    jika (ini.jenis() == "Identifier" atau ini.bisaJadiNama(ini.jenis())) {
+      nama = ini.uraiIdentifier()
+    } lainnya jika (wajibNama) {
+      ini.galatDi(ini.puncak(), "Deklarasi kelas harus punya nama")
+    }
+    misal indukKelas = kosong
+    jika (ini.cocok("KkMewarisi")) {
+      indukKelas = ini.uraiPanggilAnggota()
+    }
+    ini.harap("KurawalBuka")
+    tetap anggota = []
+    selama (ini.jenis() != "KurawalTutup" dan ini.jenis() != "AkhirBerkas") {
+      jika (ini.cocok("TitikKoma")) lanjut
+      anggota.tambah(ini.uraiAnggotaKelas())
+    }
+    ini.harap("KurawalTutup")
+    kembalikan ini.buat(awal, { jenis: "KelasEkspresi", nama: nama, induk: indukKelas, anggota: anggota })
+  }
+
+  uraiAnggotaKelas() {
+    tetap awal = ini.puncak()
+    misal statis = salah
+    jika (ini.jenis() == "KkStatis" dan bukan ini.setelahIniNamaAnggota(1)) {
+      ini.maju()
+      statis = benar
+      jika (ini.jenis() == "KurawalBuka") {
+        tetap blok = ini.uraiBlok()
+        kembalikan ini.buat(awal, { jenis: "BlokStatis", tubuh: blok.tubuh })
+      }
+    }
+
+    misal asink = salah
+    misal generator = salah
+    misal ragam = "metode"
+
+    jika (ini.jenis() == "KkAsinkron" dan bukan ini.setelahIniNamaAnggota(1) dan bukan ini.puncak(1).didahuluiBarisBaru) {
+      ini.maju()
+      asink = benar
+    }
+    jika (ini.jenis() == "Kali") {
+      ini.maju()
+      generator = benar
+    }
+    jika ((ini.jenis() == "KkDapatkan" atau ini.jenis() == "KkTetapkan") dan bukan ini.setelahIniNamaAnggota(1)) {
+      ragam = ini.jenis() == "KkDapatkan" ? "dapatkan" : "tetapkan"
+      ini.maju()
+    }
+
+    tetap kunciInfo = ini.uraiKunciAnggota()
+    tetap kunci = kunciInfo.kunci
+    tetap terhitung = kunciInfo.terhitung
+    tetap privat = kunciInfo.privat
+
+    jika (ini.jenis() == "KurungBuka") {
+      tetap kunciKonstruktor = bukan statis dan bukan terhitung dan privat == kosong dan ragam == "metode" dan ini.namaKunciAdalah(kunci, "konstruktor")
+      tetap fungsiAwal = ini.puncak()
+      tetap parameter = ini.uraiDaftarParameter()
+      tetap tubuh = ini.uraiBlok()
+      tetap simpulFungsi = ini.buat(fungsiAwal, { jenis: "Fungsi", nama: kosong, parameter: parameter, tubuh: tubuh, asinkron: asink, generator: generator, panah: salah })
+      tetap ragamAkhir = kunciKonstruktor ? "konstruktor" : ragam
+      kembalikan ini.buat(awal, { jenis: "MetodeKelas", kunci: privat ?? kunci, nilai: simpulFungsi, ragam: ragamAkhir, statis: statis, terhitung: terhitung })
+    }
+
+    misal nilai = kosong
+    jika (ini.cocok("SamaDengan")) {
+      nilai = ini.uraiPenugasan()
+    }
+    ini.akhiriPernyataan()
+    kembalikan ini.buat(awal, { jenis: "FieldKelas", kunci: privat ?? kunci, nilai: nilai, statis: statis, terhitung: terhitung })
+  }
+
+  setelahIniNamaAnggota(offset) {
+    tetap j = ini.puncak(offset).jenis
+    kembalikan j == "KurungBuka" atau j == "SamaDengan" atau j == "TitikKoma" atau j == "KurawalTutup"
+  }
+
+  namaKunciAdalah(kunci, nama) {
+    kembalikan kunci.jenis == "Identifier" dan kunci.nama == nama
+  }
+
+  uraiKunciAnggota() {
+    jika (ini.jenis() == "PrivatNama") {
+      tetap token = ini.maju()
+      tetap privat = ini.buat(token, { jenis: "NamaPrivat", nama: token.teks.iris(1) })
+      kembalikan { kunci: privat, terhitung: salah, privat: privat }
+    }
+    tetap info = ini.uraiKunciObjek()
+    kembalikan { kunci: info.kunci, terhitung: info.terhitung, privat: kosong }
+  }
+
+  uraiImpor() {
+    tetap awal = ini.harap("KkImpor")
+    tetap penentu = []
+
+    jika (ini.jenis() == "Teks") {
+      tetap sumberT = uraiTeks(ini.maju().teks)
+      ini.akhiriPernyataan()
+      kembalikan ini.buat(awal, { jenis: "Impor", penentu: penentu, sumber: sumberT })
+    }
+
+    jika (ini.jenis() == "Identifier" atau ini.bisaJadiNama(ini.jenis())) {
+      tetap awalP = ini.puncak()
+      tetap lokal = ini.uraiIdentifier()
+      penentu.tambah(ini.buat(awalP, { jenis: "PenentuImpor", ragam: "bawaan", impor: kosong, lokal: lokal }))
+      ini.cocok("Koma")
+    }
+
+    jika (ini.jenis() == "Kali") {
+      tetap awalP = ini.maju()
+      ini.harap("KkSebagai")
+      tetap lokal = ini.uraiIdentifier()
+      penentu.tambah(ini.buat(awalP, { jenis: "PenentuImpor", ragam: "namespace", impor: kosong, lokal: lokal }))
+    } lainnya jika (ini.jenis() == "KurawalBuka") {
+      ini.maju()
+      selama (ini.jenis() != "KurawalTutup" dan ini.jenis() != "AkhirBerkas") {
+        tetap awalP = ini.puncak()
+        tetap namaImpor = ini.namaModul()
+        misal lokal = kosong
+        jika (ini.cocok("KkSebagai")) {
+          lokal = ini.uraiIdentifier()
+        } lainnya {
+          lokal = ini.buat(awalP, { jenis: "Identifier", nama: namaImpor })
+        }
+        penentu.tambah(ini.buat(awalP, { jenis: "PenentuImpor", ragam: "bernama", impor: namaImpor, lokal: lokal }))
+        jika (bukan ini.cocok("Koma")) henti
+      }
+      ini.harap("KurawalTutup")
+    }
+
+    ini.harap("KkDari")
+    tetap sumber = uraiTeks(ini.harap("Teks").teks)
+    ini.akhiriPernyataan()
+    kembalikan ini.buat(awal, { jenis: "Impor", penentu: penentu, sumber: sumber })
+  }
+
+  namaModul() {
+    tetap token = ini.puncak()
+    jika (token.jenis == "Identifier" atau ini.bisaJadiNama(token.jenis)) {
+      ini.maju()
+      kembalikan token.teks
+    }
+    jika (token.jenis == "KkBawaan") {
+      ini.maju()
+      kembalikan "bawaan"
+    }
+    ini.galatDi(token, "Diharapkan nama pada daftar impor/ekspor")
+  }
+
+  uraiEkspor() {
+    tetap awal = ini.harap("KkEkspor")
+
+    jika (ini.cocok("KkBawaan")) {
+      jika (ini.jenis() == "KkFungsi" atau (ini.jenis() == "KkAsinkron" dan ini.puncak(1).jenis == "KkFungsi")) {
+        tetap asink = ini.cocok("KkAsinkron")
+        tetap simpulFungsi = ini.uraiFungsi(asink, salah)
+        tetap dekl = ini.buat(awal, { jenis: "DeklarasiFungsi", fungsi: simpulFungsi })
+        kembalikan ini.buat(awal, { jenis: "EksporBawaan", nilai: dekl })
+      }
+      jika (ini.jenis() == "KkKelas") {
+        tetap simpulKelas = ini.uraiKelas(salah)
+        tetap dekl = ini.buat(awal, { jenis: "DeklarasiKelas", kelas: simpulKelas })
+        kembalikan ini.buat(awal, { jenis: "EksporBawaan", nilai: dekl })
+      }
+      tetap nilai = ini.uraiPenugasan()
+      ini.akhiriPernyataan()
+      kembalikan ini.buat(awal, { jenis: "EksporBawaan", nilai: nilai })
+    }
+
+    jika (ini.jenis() == "Kali") {
+      ini.maju()
+      misal sebagai = kosong
+      jika (ini.cocok("KkSebagai")) {
+        sebagai = ini.namaModul()
+      }
+      ini.harap("KkDari")
+      tetap sumber = uraiTeks(ini.harap("Teks").teks)
+      ini.akhiriPernyataan()
+      kembalikan ini.buat(awal, { jenis: "EksporSemua", sumber: sumber, sebagai: sebagai })
+    }
+
+    jika (ini.jenis() == "KurawalBuka") {
+      ini.maju()
+      tetap penentu = []
+      selama (ini.jenis() != "KurawalTutup" dan ini.jenis() != "AkhirBerkas") {
+        tetap awalP = ini.puncak()
+        tetap lokal = ini.namaModul()
+        misal diekspor = lokal
+        jika (ini.cocok("KkSebagai")) {
+          diekspor = ini.namaModul()
+        }
+        penentu.tambah(ini.buat(awalP, { jenis: "PenentuEkspor", lokal: lokal, diekspor: diekspor }))
+        jika (bukan ini.cocok("Koma")) henti
+      }
+      ini.harap("KurawalTutup")
+      misal sumber = kosong
+      jika (ini.cocok("KkDari")) {
+        sumber = uraiTeks(ini.harap("Teks").teks)
+      }
+      ini.akhiriPernyataan()
+      kembalikan ini.buat(awal, { jenis: "EksporBernama", deklarasi: kosong, penentu: penentu, sumber: sumber })
+    }
+
+    tetap deklarasi = ini.uraiPernyataan()
+    kembalikan ini.buat(awal, { jenis: "EksporBernama", deklarasi: deklarasi, penentu: [], sumber: kosong })
+  }
+
+  uraiEkspresi() {
+    tetap awal = ini.puncak()
+    misal ekspresi = ini.uraiPenugasan()
+    jika (ini.jenis() == "Koma") {
+      tetap daftar = [ekspresi]
+      selama (ini.cocok("Koma")) {
+        daftar.tambah(ini.uraiPenugasan())
+      }
+      ekspresi = ini.buat(awal, { jenis: "Urutan", ekspresi: daftar })
+    }
+    kembalikan ekspresi
+  }
+
+  uraiPenugasan() {
+    jika (ini.jenis() == "KkHasilkan") {
+      kembalikan ini.uraiHasilkan()
+    }
+
+    tetap arrow = ini.cobaArrow()
+    jika (arrow != kosong) kembalikan arrow
+
+    tetap awal = ini.puncak()
+    tetap kiri = ini.uraiKondisional()
+    tetap operator = OPERATOR_PENUGASAN.ambil(ini.jenis())
+    jika (operator != taktentu) {
+      ini.maju()
+      tetap nilai = ini.uraiPenugasan()
+      tetap sasaran = operator == "=" ? ini.keTargetPenugasan(kiri) : kiri
+      kembalikan ini.buat(awal, { jenis: "Penugasan", operator: operator, sasaran: sasaran, nilai: nilai })
+    }
+    kembalikan kiri
+  }
+
+  uraiHasilkan() {
+    tetap awal = ini.harap("KkHasilkan")
+    tetap delegasi = ini.cocok("Kali")
+    misal argumen = kosong
+    tetap token = ini.puncak()
+    jika (delegasi atau (token.jenis != "TitikKoma" dan token.jenis != "KurungTutup" dan token.jenis != "SikuTutup" dan token.jenis != "KurawalTutup" dan token.jenis != "Koma" dan token.jenis != "TitikDua" dan token.jenis != "AkhirBerkas" dan bukan token.didahuluiBarisBaru)) {
+      argumen = ini.uraiPenugasan()
+    }
+    kembalikan ini.buat(awal, { jenis: "Hasilkan", argumen: argumen, delegasi: delegasi })
+  }
+
+  cobaArrow() {
+    tetap jenis = ini.jenis()
+    tetap asink = jenis == "KkAsinkron"
+    misal offset = 0
+    jika (asink) {
+      jika (ini.puncak(1).didahuluiBarisBaru) kembalikan kosong
+      offset = 1
+    }
+    tetap jenisSetelah = ini.puncak(offset).jenis
+
+    jika ((jenisSetelah == "Identifier" atau ini.bisaJadiNama(jenisSetelah)) dan ini.puncak(offset + 1).jenis == "Panah") {
+      tetap awal = ini.puncak()
+      jika (asink) ini.maju()
+      tetap paramAwal = ini.puncak()
+      tetap param = ini.uraiIdentifier()
+      kembalikan ini.selesaikanArrow(awal, [param], asink, paramAwal)
+    }
+
+    jika (jenisSetelah == "KurungBuka") {
+      tetap akhirKurung = ini.indeksSetelahSeimbang(ini.i + offset)
+      jika (akhirKurung != -1 dan ini.token[akhirKurung]?.jenis == "Panah") {
+        tetap awal = ini.puncak()
+        jika (asink) ini.maju()
+        tetap param = ini.uraiDaftarParameter()
+        kembalikan ini.selesaikanArrow(awal, param, asink, awal)
+      }
+    }
+
+    kembalikan kosong
+  }
+
+  selesaikanArrow(awal, parameter, asink, paramAwal) {
+    ini.harap("Panah")
+    misal tubuh = kosong
+    jika (ini.jenis() == "KurawalBuka") {
+      tubuh = ini.uraiBlok()
+    } lainnya {
+      tubuh = ini.uraiPenugasan()
+    }
+    kembalikan ini.buat(awal, { jenis: "Fungsi", nama: kosong, parameter: parameter, tubuh: tubuh, asinkron: asink, generator: salah, panah: benar })
+  }
+
+  indeksSetelahSeimbang(indeksBuka) {
+    misal kedalaman = 0
+    untuk (misal j = indeksBuka; j < ini.token.panjang; j++) {
+      tetap jn = ini.token[j].jenis
+      jika (jn == "KurungBuka" atau jn == "SikuBuka" atau jn == "KurawalBuka") {
+        kedalaman = kedalaman + 1
+      } lainnya jika (jn == "KurungTutup" atau jn == "SikuTutup" atau jn == "KurawalTutup") {
+        kedalaman = kedalaman - 1
+        jika (kedalaman == 0) kembalikan j + 1
+      } lainnya jika (jn == "AkhirBerkas") {
+        kembalikan -1
+      }
+    }
+    kembalikan -1
+  }
+
+  uraiKondisional() {
+    tetap awal = ini.puncak()
+    tetap uji = ini.uraiBiner(1)
+    jika (ini.cocok("Tanya")) {
+      tetap konsekuen = ini.uraiPenugasan()
+      ini.harap("TitikDua")
+      tetap alternatif = ini.uraiPenugasan()
+      kembalikan ini.buat(awal, { jenis: "Kondisional", uji: uji, konsekuen: konsekuen, alternatif: alternatif })
+    }
+    kembalikan uji
+  }
+
+  uraiBiner(minBp) {
+    tetap awal = ini.puncak()
+    misal kiri = ini.uraiUner()
+    selama (benar) {
+      tetap jenis = ini.jenis()
+      jika (jenis == "KkDalam" dan bukan ini.izinkanDalam) henti
+      tetap bp = BP_BINER.ambil(jenis)
+      jika (bp == taktentu atau bp < minBp) henti
+      tetap operator = TEKS_OPERATOR.ambil(jenis)
+      ini.maju()
+      tetap bpKanan = jenis == "Pangkat" ? bp : bp + 1
+      tetap kanan = ini.uraiBiner(bpKanan)
+      jika (OPERATOR_LOGIKA.punya(jenis)) {
+        kiri = ini.buat(awal, { jenis: "Logika", operator: operator, kiri: kiri, kanan: kanan })
+      } lainnya {
+        kiri = ini.buat(awal, { jenis: "Biner", operator: operator, kiri: kiri, kanan: kanan })
+      }
+    }
+    kembalikan kiri
+  }
+
+  uraiUner() {
+    tetap jenis = ini.jenis()
+    tetap awal = ini.puncak()
+
+    jika (jenis == "Seru" atau jenis == "Tilde" atau jenis == "Tambah" atau jenis == "Kurang" atau jenis == "KkJenisdari" atau jenis == "KkAbaikan" atau jenis == "KkHapus") {
+      ini.maju()
+      tetap argumen = ini.uraiUner()
+      kembalikan ini.buat(awal, { jenis: "Uner", operator: TEKS_OPERATOR.ambil(jenis), argumen: argumen })
+    }
+
+    jika (jenis == "KkTunggu") {
+      ini.maju()
+      tetap argumen = ini.uraiUner()
+      kembalikan ini.buat(awal, { jenis: "Tunggu", argumen: argumen })
+    }
+
+    jika (jenis == "TambahTambah" atau jenis == "KurangKurang") {
+      ini.maju()
+      tetap argumen = ini.uraiUner()
+      kembalikan ini.buat(awal, { jenis: "Perbarui", operator: jenis == "TambahTambah" ? "++" : "--", argumen: argumen, prefiks: benar })
+    }
+
+    kembalikan ini.uraiPostfix()
+  }
+
+  uraiPostfix() {
+    tetap awal = ini.puncak()
+    misal ekspresi = ini.uraiPanggilAnggota()
+    tetap jenis = ini.jenis()
+    jika ((jenis == "TambahTambah" atau jenis == "KurangKurang") dan bukan ini.puncak().didahuluiBarisBaru) {
+      ini.maju()
+      ekspresi = ini.buat(awal, { jenis: "Perbarui", operator: jenis == "TambahTambah" ? "++" : "--", argumen: ekspresi, prefiks: salah })
+    }
+    kembalikan ekspresi
+  }
+
+  uraiPanggilAnggota() {
+    tetap awal = ini.puncak()
+    misal ekspresi = ini.uraiPrimerAtauBaru()
+    misal adaOpsional = salah
+
+    selama (benar) {
+      tetap jenis = ini.jenis()
+      jika (jenis == "Titik") {
+        ini.maju()
+        tetap properti = ini.namaSetelahTitik()
+        ekspresi = ini.buat(awal, { jenis: "AksesAnggota", objek: ekspresi, properti: properti, terhitung: salah, opsional: salah })
+      } lainnya jika (jenis == "TanyaTitik") {
+        ini.maju()
+        adaOpsional = benar
+        jika (ini.jenis() == "SikuBuka") {
+          ini.maju()
+          tetap properti = ini.uraiEkspresi()
+          ini.harap("SikuTutup")
+          ekspresi = ini.buat(awal, { jenis: "AksesAnggota", objek: ekspresi, properti: properti, terhitung: benar, opsional: benar })
+        } lainnya jika (ini.jenis() == "KurungBuka") {
+          tetap argumen = ini.uraiArgumen()
+          ekspresi = ini.buat(awal, { jenis: "Pemanggilan", callee: ekspresi, argumen: argumen, opsional: benar })
+        } lainnya {
+          tetap properti = ini.namaSetelahTitik()
+          ekspresi = ini.buat(awal, { jenis: "AksesAnggota", objek: ekspresi, properti: properti, terhitung: salah, opsional: benar })
+        }
+      } lainnya jika (jenis == "SikuBuka") {
+        ini.maju()
+        tetap properti = ini.uraiEkspresi()
+        ini.harap("SikuTutup")
+        ekspresi = ini.buat(awal, { jenis: "AksesAnggota", objek: ekspresi, properti: properti, terhitung: benar, opsional: salah })
+      } lainnya jika (jenis == "KurungBuka") {
+        tetap argumen = ini.uraiArgumen()
+        ekspresi = ini.buat(awal, { jenis: "Pemanggilan", callee: ekspresi, argumen: argumen, opsional: salah })
+      } lainnya jika (jenis == "TemplateUtuh" atau jenis == "TemplateKepala") {
+        tetap quasi = ini.uraiTemplate()
+        ekspresi = ini.buat(awal, { jenis: "TemplateTertag", tag: ekspresi, quasi: quasi })
+      } lainnya {
+        henti
+      }
+    }
+
+    jika (adaOpsional) {
+      kembalikan ini.buat(awal, { jenis: "RantaiOpsional", ekspresi: ekspresi })
+    }
+    kembalikan ekspresi
+  }
+
+  namaSetelahTitik() {
+    tetap token = ini.puncak()
+    jika (token.jenis == "PrivatNama") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "NamaPrivat", nama: token.teks.iris(1) })
+    }
+    ini.maju()
+    kembalikan ini.buat(token, { jenis: "Identifier", nama: token.teks })
+  }
+
+  uraiArgumen() {
+    ini.harap("KurungBuka")
+    tetap argumen = []
+    selama (ini.jenis() != "KurungTutup") {
+      jika (ini.jenis() == "Elipsis") {
+        tetap awalS = ini.maju()
+        tetap nilai = ini.uraiPenugasan()
+        argumen.tambah(ini.buat(awalS, { jenis: "Sebar", argumen: nilai }))
+      } lainnya {
+        argumen.tambah(ini.uraiPenugasan())
+      }
+      jika (bukan ini.cocok("Koma")) henti
+    }
+    ini.harap("KurungTutup")
+    kembalikan argumen
+  }
+
+  uraiPrimerAtauBaru() {
+    jika (ini.jenis() == "KkBaru") {
+      kembalikan ini.uraiBaru()
+    }
+    kembalikan ini.uraiPrimer()
+  }
+
+  uraiBaru() {
+    tetap awal = ini.harap("KkBaru")
+    misal callee = ini.uraiPrimerAtauBaru()
+    selama (benar) {
+      jika (ini.jenis() == "Titik") {
+        ini.maju()
+        tetap properti = ini.namaSetelahTitik()
+        callee = ini.buat(awal, { jenis: "AksesAnggota", objek: callee, properti: properti, terhitung: salah, opsional: salah })
+      } lainnya jika (ini.jenis() == "SikuBuka") {
+        ini.maju()
+        tetap properti = ini.uraiEkspresi()
+        ini.harap("SikuTutup")
+        callee = ini.buat(awal, { jenis: "AksesAnggota", objek: callee, properti: properti, terhitung: benar, opsional: salah })
+      } lainnya {
+        henti
+      }
+    }
+    misal argumen = []
+    jika (ini.jenis() == "KurungBuka") {
+      argumen = ini.uraiArgumen()
+    }
+    kembalikan ini.buat(awal, { jenis: "Baru", callee: callee, argumen: argumen })
+  }
+
+  uraiPrimer() {
+    tetap token = ini.puncak()
+    tetap j = token.jenis
+    jika (j == "Angka") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "LiteralAngka", nilai: uraiAngka(token.teks) })
+    }
+    jika (j == "BilanganBesar") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "LiteralBilanganBesar", nilai: uraiBilanganBesar(token.teks) })
+    }
+    jika (j == "Teks") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "LiteralTeks", nilai: uraiTeks(token.teks) })
+    }
+    jika (j == "KkBenar") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "LiteralBoolean", nilai: benar })
+    }
+    jika (j == "KkSalah") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "LiteralBoolean", nilai: salah })
+    }
+    jika (j == "KkKosong") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "LiteralKosong" })
+    }
+    jika (j == "KkTaktentu") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "LiteralTaktentu" })
+    }
+    jika (j == "KkIni") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "Ini" })
+    }
+    jika (j == "KkInduk") {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "Induk" })
+    }
+    jika (j == "Regex") kembalikan ini.uraiRegex()
+    jika (j == "TemplateUtuh" atau j == "TemplateKepala") kembalikan ini.uraiTemplate()
+    jika (j == "SikuBuka") kembalikan ini.uraiLarik()
+    jika (j == "KurawalBuka") kembalikan ini.uraiObjek()
+    jika (j == "KurungBuka") kembalikan ini.uraiKurung()
+    jika (j == "KkFungsi") kembalikan ini.uraiFungsi(salah, salah)
+    jika (j == "KkAsinkron") {
+      jika (ini.puncak(1).jenis == "KkFungsi") kembalikan ini.uraiFungsi(benar, salah)
+    }
+    jika (j == "KkKelas") kembalikan ini.uraiKelas(salah)
+    jika (j == "KkImpor") {
+      jika (ini.puncak(1).jenis == "KurungBuka") {
+        ini.maju()
+        ini.harap("KurungBuka")
+        tetap sumber = ini.uraiPenugasan()
+        ini.harap("KurungTutup")
+        kembalikan ini.buat(token, { jenis: "ImporDinamis", sumber: sumber })
+      }
+    }
+    jika (j == "Identifier") kembalikan ini.uraiIdentifier()
+
+    jika (ini.bisaJadiNama(token.jenis)) {
+      kembalikan ini.uraiIdentifier()
+    }
+
+    ini.galatDi(token, "Ekspresi tidak terduga: \"" + ini.tampilToken(token) + "\"")
+  }
+
+  uraiRegex() {
+    tetap token = ini.maju()
+    tetap indeksTerakhir = indeksTerakhirDari(token.teks, "/")
+    tetap pola = token.teks.iris(1, indeksTerakhir)
+    tetap bendera = token.teks.iris(indeksTerakhir + 1)
+    kembalikan ini.buat(token, { jenis: "LiteralRegex", pola: pola, bendera: bendera })
+  }
+
+  uraiTemplate() {
+    tetap awal = ini.puncak()
+    tetap bagian = []
+    tetap mentah = []
+    tetap ekspresi = []
+
+    tetap pertama = ini.maju()
+    jika (pertama.jenis == "TemplateUtuh") {
+      tetap iris = irisTemplate(pertama.teks, "TemplateUtuh")
+      mentah.tambah(iris.mentah)
+      bagian.tambah(masakTemplate(iris.mentah))
+      kembalikan ini.buat(awal, { jenis: "TemplateTeks", bagian: bagian, mentah: mentah, ekspresi: ekspresi })
+    }
+
+    misal iris = irisTemplate(pertama.teks, "TemplateKepala")
+    mentah.tambah(iris.mentah)
+    bagian.tambah(masakTemplate(iris.mentah))
+
+    selama (benar) {
+      ekspresi.tambah(ini.uraiEkspresi())
+      tetap token = ini.puncak()
+      jika (token.jenis == "TemplateEkor") {
+        ini.maju()
+        iris = irisTemplate(token.teks, "TemplateEkor")
+        mentah.tambah(iris.mentah)
+        bagian.tambah(masakTemplate(iris.mentah))
+        henti
+      }
+      jika (token.jenis == "TemplateTengah") {
+        ini.maju()
+        iris = irisTemplate(token.teks, "TemplateTengah")
+        mentah.tambah(iris.mentah)
+        bagian.tambah(masakTemplate(iris.mentah))
+        lanjut
+      }
+      ini.galatDi(token, "Template teks tidak lengkap")
+    }
+
+    kembalikan ini.buat(awal, { jenis: "TemplateTeks", bagian: bagian, mentah: mentah, ekspresi: ekspresi })
+  }
+
+  uraiLarik() {
+    tetap awal = ini.harap("SikuBuka")
+    tetap elemen = []
+    selama (ini.jenis() != "SikuTutup") {
+      jika (ini.jenis() == "Koma") {
+        ini.galatDi(ini.puncak(), "Larik dengan lubang tidak didukung")
+      }
+      jika (ini.jenis() == "Elipsis") {
+        tetap awalS = ini.maju()
+        tetap nilai = ini.uraiPenugasan()
+        elemen.tambah(ini.buat(awalS, { jenis: "Sebar", argumen: nilai }))
+      } lainnya {
+        elemen.tambah(ini.uraiPenugasan())
+      }
+      jika (ini.jenis() != "SikuTutup") {
+        ini.harap("Koma")
+        jika (ini.jenis() == "SikuTutup") henti
+      }
+    }
+    ini.harap("SikuTutup")
+    kembalikan ini.buat(awal, { jenis: "Larik", elemen: elemen })
+  }
+
+  uraiObjek() {
+    tetap awal = ini.harap("KurawalBuka")
+    tetap properti = []
+    selama (ini.jenis() != "KurawalTutup") {
+      jika (ini.jenis() == "Elipsis") {
+        tetap awalS = ini.maju()
+        tetap nilai = ini.uraiPenugasan()
+        properti.tambah(ini.buat(awalS, { jenis: "Sebar", argumen: nilai }))
+      } lainnya {
+        properti.tambah(ini.uraiPropertiObjek())
+      }
+      jika (bukan ini.cocok("Koma")) henti
+    }
+    ini.harap("KurawalTutup")
+    kembalikan ini.buat(awal, { jenis: "Objek", properti: properti })
+  }
+
+  uraiPropertiObjek() {
+    tetap awal = ini.puncak()
+    misal asink = salah
+    misal generator = salah
+    misal ragam = "init"
+
+    jika (ini.jenis() == "KkAsinkron" dan bukan ini.setelahIniPemisahProperti(1) dan bukan ini.puncak(1).didahuluiBarisBaru) {
+      ini.maju()
+      asink = benar
+    }
+    jika (ini.jenis() == "Kali") {
+      ini.maju()
+      generator = benar
+    }
+    jika ((ini.jenis() == "KkDapatkan" atau ini.jenis() == "KkTetapkan") dan bukan ini.setelahIniPemisahProperti(1)) {
+      ragam = ini.jenis() == "KkDapatkan" ? "dapatkan" : "tetapkan"
+      ini.maju()
+    }
+
+    tetap info = ini.uraiKunciObjek()
+    tetap kunci = info.kunci
+    tetap terhitung = info.terhitung
+
+    jika (ini.jenis() == "KurungBuka") {
+      tetap fungsiAwal = ini.puncak()
+      tetap parameter = ini.uraiDaftarParameter()
+      tetap tubuh = ini.uraiBlok()
+      tetap simpulFungsi = ini.buat(fungsiAwal, { jenis: "Fungsi", nama: kosong, parameter: parameter, tubuh: tubuh, asinkron: asink, generator: generator, panah: salah })
+      kembalikan ini.buat(awal, { jenis: "PropertiObjek", kunci: kunci, nilai: simpulFungsi, terhitung: terhitung, singkat: salah, ragam: ragam, metode: benar })
+    }
+
+    jika (ragam != "init") {
+      ini.galatDi(ini.puncak(), "Getter/setter harus berupa metode")
+    }
+
+    jika (ini.cocok("TitikDua")) {
+      tetap nilai = ini.uraiPenugasan()
+      kembalikan ini.buat(awal, { jenis: "PropertiObjek", kunci: kunci, nilai: nilai, terhitung: terhitung, singkat: salah, ragam: "init", metode: salah })
+    }
+
+    jika (kunci.jenis != "Identifier") {
+      ini.galatDi(awal, "Properti singkat harus berupa pengenal")
+    }
+    misal nilai = kunci
+    jika (ini.cocok("SamaDengan")) {
+      tetap bawaan = ini.uraiPenugasan()
+      nilai = ini.buat(awal, { jenis: "Penugasan", operator: "=", sasaran: kunci, nilai: bawaan })
+    }
+    kembalikan ini.buat(awal, { jenis: "PropertiObjek", kunci: kunci, nilai: nilai, terhitung: terhitung, singkat: benar, ragam: "init", metode: salah })
+  }
+
+  setelahIniPemisahProperti(offset) {
+    tetap j = ini.puncak(offset).jenis
+    kembalikan j == "TitikDua" atau j == "Koma" atau j == "KurawalTutup" atau j == "KurungBuka" atau j == "SamaDengan"
+  }
+
+  uraiKunciObjek() {
+    tetap token = ini.puncak()
+    jika (token.jenis == "SikuBuka") {
+      ini.maju()
+      tetap kunci = ini.uraiPenugasan()
+      ini.harap("SikuTutup")
+      kembalikan { kunci: kunci, terhitung: benar }
+    }
+    jika (token.jenis == "Teks") {
+      ini.maju()
+      kembalikan { kunci: ini.buat(token, { jenis: "LiteralTeks", nilai: uraiTeks(token.teks) }), terhitung: salah }
+    }
+    jika (token.jenis == "Angka") {
+      ini.maju()
+      kembalikan { kunci: ini.buat(token, { jenis: "LiteralAngka", nilai: uraiAngka(token.teks) }), terhitung: salah }
+    }
+    jika (token.jenis == "Identifier" atau ini.adalahKataKunci(token.jenis)) {
+      ini.maju()
+      kembalikan { kunci: ini.buat(token, { jenis: "Identifier", nama: token.teks }), terhitung: salah }
+    }
+    ini.galatDi(token, "Nama properti tidak valid")
+  }
+
+  uraiKurung() {
+    ini.harap("KurungBuka")
+    tetap ekspresi = ini.uraiEkspresi()
+    ini.harap("KurungTutup")
+    kembalikan ekspresi
+  }
+
+  uraiIdentifier() {
+    tetap token = ini.puncak()
+    jika (token.jenis == "Identifier" atau ini.bisaJadiNama(token.jenis)) {
+      ini.maju()
+      kembalikan ini.buat(token, { jenis: "Identifier", nama: token.teks })
+    }
+    ini.galatDi(token, "Diharapkan pengenal tetapi menemukan \"" + ini.tampilToken(token) + "\"")
+  }
+
+  bisaJadiNama(jenis) {
+    kembalikan KATA_KUNCI_LUNAK.punya(jenis)
+  }
+
+  adalahKataKunci(jenis) {
+    kembalikan jenis.diawali("Kk")
+  }
+
+  uraiPolaDenganBawaan() {
+    tetap awal = ini.puncak()
+    tetap pola = ini.uraiPola()
+    jika (ini.cocok("SamaDengan")) {
+      tetap bawaan = ini.uraiPenugasan()
+      kembalikan ini.buat(awal, { jenis: "PolaBawaan", kiri: pola, bawaan: bawaan })
+    }
+    kembalikan pola
+  }
+
+  uraiPola() {
+    tetap jenis = ini.jenis()
+    jika (jenis == "SikuBuka") kembalikan ini.uraiPolaLarik()
+    jika (jenis == "KurawalBuka") kembalikan ini.uraiPolaObjek()
+    jika (jenis == "Elipsis") kembalikan ini.uraiPolaSisa()
+    kembalikan ini.uraiIdentifier()
+  }
+
+  uraiPolaSisa() {
+    tetap awal = ini.harap("Elipsis")
+    tetap argumen = ini.uraiPola()
+    kembalikan ini.buat(awal, { jenis: "PolaSisa", argumen: argumen })
+  }
+
+  uraiPolaLarik() {
+    tetap awal = ini.harap("SikuBuka")
+    tetap elemen = []
+    selama (ini.jenis() != "SikuTutup") {
+      jika (ini.jenis() == "Koma") {
+        ini.galatDi(ini.puncak(), "Pola larik dengan lubang tidak didukung")
+      }
+      jika (ini.jenis() == "Elipsis") {
+        elemen.tambah(ini.uraiPolaSisa())
+        henti
+      }
+      elemen.tambah(ini.uraiPolaDenganBawaan())
+      jika (bukan ini.cocok("Koma")) henti
+    }
+    ini.harap("SikuTutup")
+    kembalikan ini.buat(awal, { jenis: "PolaLarik", elemen: elemen })
+  }
+
+  uraiPolaObjek() {
+    tetap awal = ini.harap("KurawalBuka")
+    tetap properti = []
+    selama (ini.jenis() != "KurawalTutup") {
+      jika (ini.jenis() == "Elipsis") {
+        properti.tambah(ini.uraiPolaSisa())
+        henti
+      }
+      tetap awalP = ini.puncak()
+      tetap info = ini.uraiKunciObjek()
+      tetap kunci = info.kunci
+      tetap terhitung = info.terhitung
+      jika (ini.cocok("TitikDua")) {
+        tetap nilai = ini.uraiPolaDenganBawaan()
+        properti.tambah(ini.buat(awalP, { jenis: "PropertiPola", kunci: kunci, nilai: nilai, terhitung: terhitung, singkat: salah }))
+      } lainnya {
+        jika (kunci.jenis != "Identifier") ini.galatDi(awalP, "Pola objek singkat harus berupa pengenal")
+        misal nilai = kunci
+        jika (ini.cocok("SamaDengan")) {
+          tetap bawaan = ini.uraiPenugasan()
+          nilai = ini.buat(awalP, { jenis: "PolaBawaan", kiri: kunci, bawaan: bawaan })
+        }
+        properti.tambah(ini.buat(awalP, { jenis: "PropertiPola", kunci: kunci, nilai: nilai, terhitung: terhitung, singkat: benar }))
+      }
+      jika (bukan ini.cocok("Koma")) henti
+    }
+    ini.harap("KurawalTutup")
+    kembalikan ini.buat(awal, { jenis: "PolaObjek", properti: properti })
+  }
+
+  keTargetPenugasan(ekspresi) {
+    jika (ekspresi.jenis == "Larik" atau ekspresi.jenis == "Objek") {
+      kembalikan ini.kePola(ekspresi)
+    }
+    kembalikan ekspresi
+  }
+
+  kePola(ekspresi) {
+    jika (ekspresi.jenis == "Identifier" atau ekspresi.jenis == "AksesAnggota") {
+      kembalikan ekspresi
+    }
+    jika (ekspresi.jenis == "Larik") {
+      tetap elemen = ekspresi.elemen.petakan((e) => {
+        jika (e.jenis == "Sebar") {
+          kembalikan ini.ulang(e, { jenis: "PolaSisa", argumen: ini.kePola(e.argumen) })
+        }
+        kembalikan ini.kePola(e)
+      })
+      kembalikan ini.ulang(ekspresi, { jenis: "PolaLarik", elemen: elemen })
+    }
+    jika (ekspresi.jenis == "Objek") {
+      tetap properti = ekspresi.properti.petakan((p) => {
+        jika (p.jenis == "Sebar") {
+          kembalikan ini.ulang(p, { jenis: "PolaSisa", argumen: ini.kePola(p.argumen) })
+        }
+        kembalikan ini.ulang(p, { jenis: "PropertiPola", kunci: p.kunci, nilai: ini.kePola(p.nilai), terhitung: p.terhitung, singkat: p.singkat })
+      })
+      kembalikan ini.ulang(ekspresi, { jenis: "PolaObjek", properti: properti })
+    }
+    jika (ekspresi.jenis == "Penugasan") {
+      jika (ekspresi.operator == "=") {
+        kembalikan ini.ulang(ekspresi, { jenis: "PolaBawaan", kiri: ini.kePola(ekspresi.sasaran), bawaan: ekspresi.nilai })
+      }
+    }
+    ini.galatDi(ini.tokenDari(ekspresi), "Target penugasan atau pola tidak valid")
+  }
+
+  tokenDari(simpul) {
+    kembalikan { jenis: "Identifier", teks: "", baris: simpul.baris, kolom: simpul.kolom, awal: simpul.awal, akhir: simpul.akhir, didahuluiBarisBaru: salah }
+  }
+}
+
+ekspor fungsi urai(sumber, namaBerkas) {
+  tetap p = baru Parser(sumber, namaBerkas)
+  kembalikan p.uraiProgram()
+}

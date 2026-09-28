@@ -1,0 +1,98 @@
+tetap DIGIT_LITERAL = /[0-9]/
+
+ekspor fungsi uraiAngka(teks) {
+  kembalikan Angka(teks.gantiSemua("_", ""))
+}
+
+ekspor fungsi uraiBilanganBesar(teks) {
+  tetap tanpaAkhiran = teks.iris(0, teks.panjang - 1).gantiSemua("_", "")
+  kembalikan BilanganBesar(tanpaAkhiran)
+}
+
+ekspor fungsi uraiTeks(teks) {
+  kembalikan bacaEscape(teks.iris(1, teks.panjang - 1))
+}
+
+ekspor fungsi irisTemplate(teksToken, ragam) {
+  misal isi = ""
+  jika (ragam == "TemplateUtuh") {
+    isi = teksToken.iris(1, teksToken.panjang - 1)
+  } lainnya jika (ragam == "TemplateKepala") {
+    isi = teksToken.iris(1, teksToken.panjang - 2)
+  } lainnya jika (ragam == "TemplateTengah") {
+    isi = teksToken.iris(1, teksToken.panjang - 2)
+  } lainnya {
+    isi = teksToken.iris(1, teksToken.panjang - 1)
+  }
+  kembalikan { mentah: isi }
+}
+
+ekspor fungsi masakTemplate(mentah) {
+  kembalikan bacaEscape(mentah)
+}
+
+fungsi bacaEscape(teks) {
+  misal hasil = ""
+  misal i = 0
+  selama (i < teks.panjang) {
+    tetap karakter = teks[i]
+    jika (karakter != "\\") {
+      hasil = hasil + karakter
+      i = i + 1
+      lanjut
+    }
+    i = i + 1
+    tetap lepas = teks[i] ?? ""
+    jika (lepas == "n") {
+      hasil = hasil + "\n"
+      i = i + 1
+    } lainnya jika (lepas == "t") {
+      hasil = hasil + "\t"
+      i = i + 1
+    } lainnya jika (lepas == "r") {
+      hasil = hasil + "\r"
+      i = i + 1
+    } lainnya jika (lepas == "b") {
+      hasil = hasil + "\b"
+      i = i + 1
+    } lainnya jika (lepas == "f") {
+      hasil = hasil + "\f"
+      i = i + 1
+    } lainnya jika (lepas == "v") {
+      hasil = hasil + "\v"
+      i = i + 1
+    } lainnya jika (lepas == "0") {
+      jika (bukan DIGIT_LITERAL.uji(teks[i + 1] ?? "")) {
+        hasil = hasil + "\0"
+        i = i + 1
+      } lainnya {
+        hasil = hasil + "0"
+        i = i + 1
+      }
+    } lainnya jika (lepas == "x") {
+      tetap heks = teks.iris(i + 1, i + 3)
+      hasil = hasil + Teks.dariKode(uraiBulat(heks, 16))
+      i = i + 3
+    } lainnya jika (lepas == "u") {
+      jika (teks[i + 1] == "{") {
+        tetap tutup = teks.indeksDari("}", i + 2)
+        tetap heks = teks.iris(i + 2, tutup)
+        hasil = hasil + Teks.dariKode(uraiBulat(heks, 16))
+        i = tutup + 1
+      } lainnya {
+        tetap heks = teks.iris(i + 1, i + 5)
+        hasil = hasil + Teks.dariKode(uraiBulat(heks, 16))
+        i = i + 5
+      }
+    } lainnya jika (lepas == "\n") {
+      i = i + 1
+    } lainnya jika (lepas == "\r") {
+      i = i + 1
+      jika (teks[i] == "\n") i = i + 1
+    } lainnya {
+      hasil = hasil + lepas
+      i = i + 1
+    }
+  }
+  kembalikan hasil
+}

@@ -1,0 +1,36 @@
+impor { urai } dari "./parser.wni"
+impor { kompilasiProgram } dari "./kompiler.wni"
+
+fungsi encodeTeks(t) {
+  tetap kode = []
+  untuk (misal i = 0; i < t.panjang; i++) kode.tambah(t.kodeDi(i))
+  kembalikan "s" + kode.gabung(",")
+}
+
+fungsi serialKonst(k) {
+  tetap t = jenisdari k
+  jika (t == "angka") kembalikan "n" + k
+  jika (t == "bilanganbesar") kembalikan "B" + k
+  jika (t == "teks") kembalikan encodeTeks(k)
+  jika (t == "objek") kembalikan "F(" + serialFungsi(k) + ")"
+  kembalikan "?" + t
+}
+
+fungsi serialFungsi(f) {
+  tetap konst = f.potongan.konstanta.petakan((k) => serialKonst(k)).gabung("|")
+  kembalikan "nama=" + encodeTeks(f.nama) +
+    ";arity=" + f.arity +
+    ";up=" + f.jumlahUpvalue +
+    ";gen=" + (f.generator ? "1" : "0") +
+    ";async=" + (f.asinkron ? "1" : "0") +
+    ";sisa=" + (f.punyaSisa ? "1" : "0") +
+    ";kode=" + f.potongan.kode.gabung(",") +
+    ";garis=" + f.potongan.garis.gabung(",") +
+    ";konst=[" + konst + "]"
+}
+
+tetap jalur = Proses.lingkungan.MASUKAN_MANDIRI
+tetap sumber = Berkas.baca(jalur)
+tetap pohon = urai(sumber, jalur)
+tetap fn = kompilasiProgram(pohon, jalur)
+cetak(serialFungsi(fn))

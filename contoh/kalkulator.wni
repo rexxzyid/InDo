@@ -1,0 +1,32 @@
+fungsi hitung(a, operator, b) {
+  pilih (operator) {
+    kasus "+":
+      kembalikan a + b
+    kasus "-":
+      kembalikan a - b
+    kasus "*":
+      kembalikan a * b
+    kasus "/":
+      jika (b == 0) lempar baru Galat("Pembagian dengan nol")
+      kembalikan a / b
+    bawaan:
+      lempar baru Galat("Operator tidak dikenal: " + operator)
+  }
+}
+
+tetap contoh = [
+  [8, "+", 5],
+  [10, "-", 3],
+  [6, "*", 7],
+  [20, "/", 4],
+]
+
+untuk (tetap [a, op, b] dari contoh) {
+  cetak(a + " " + op + " " + b + " = " + hitung(a, op, b))
+}
+
+coba {
+  hitung(1, "/", 0)
+} tangkap (galat) {
+  cetak("Galat tertangkap: " + galat.pesan)
+}

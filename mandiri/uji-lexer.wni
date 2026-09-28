@@ -1,0 +1,11 @@
+impor { tokenisasi } dari "./lexer.wni"
+
+tetap jalur = Proses.lingkungan.MASUKAN_MANDIRI
+tetap sumber = Berkas.baca(jalur)
+tetap daftar = tokenisasi(sumber, jalur)
+untuk (tetap t dari daftar) {
+  cetak(
+    t.jenis + "|" + t.baris + "|" + t.kolom + "|" + t.awal + "|" + t.akhir + "|" +
+      (t.didahuluiBarisBaru ? "1" : "0") + "|" + JSON.teks(t.teks),
+  )
+}

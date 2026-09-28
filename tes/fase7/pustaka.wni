@@ -1,0 +1,7 @@
+ekspor tetap VERSI = "1.0"
+ekspor fungsi salam(nama) { kembalikan `Halo, ${nama}!` }
+ekspor kelas Penghitung {
+  konstruktor() { ini.nilai = 0 }
+  tambah() { ini.nilai += 1; kembalikan ini }
+}
+ekspor bawaan salam

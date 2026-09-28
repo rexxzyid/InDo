@@ -1,0 +1,10 @@
+misal inventaris = baru Peta()
+inventaris.tetapkan("apel", 50)
+inventaris.tetapkan("jeruk", 30)
+untuk (misal [barang, jumlah] dari inventaris) cetak(`${barang}: ${jumlah}`)
+misal unik = baru Himpunan([1, 1, 2, 3, 3])
+cetak("unik:", [...unik])
+misal besar = 2n ** 100n
+cetak("2^100 =", besar)
+misal wakil = baru Wakil({ x: 5 }, { ambil(t, k) { kembalikan (t[k] ?? 0) + 1 } })
+cetak("wakil.x:", wakil.x, "wakil.y:", wakil.y)

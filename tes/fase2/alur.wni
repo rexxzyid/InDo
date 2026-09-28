@@ -1,0 +1,11 @@
+untuk (misal i = 0; i < 5; i++) {
+  jika (i == 2) lanjut
+  jika (i == 4) henti
+  cetak(i)
+}
+misal buah = "apel"
+pilih (buah) {
+  kasus "jeruk": cetak("asam"); henti
+  kasus "apel": cetak("manis"); henti
+  bawaan: cetak("entah")
+}

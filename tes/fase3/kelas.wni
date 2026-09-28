@@ -1,0 +1,21 @@
+kelas Bentuk {
+  konstruktor(nama) { ini.nama = nama }
+  luas() { kembalikan 0 }
+  info() { kembalikan `${ini.nama} luas ${ini.luas()}` }
+}
+kelas PersegiPanjang mewarisi Bentuk {
+  konstruktor(p, l) { induk("persegi panjang"); ini.p = p; ini.l = l }
+  luas() { kembalikan ini.p * ini.l }
+}
+misal r = baru PersegiPanjang(4, 5)
+cetak(r.info())
+cetak(r contohdari Bentuk)
+
+kelas Akun {
+  #saldo = 0
+  setor(n) { ini.#saldo += n; kembalikan ini }
+  dapatkan saldo() { kembalikan ini.#saldo }
+}
+misal a = baru Akun()
+a.setor(100).setor(50)
+cetak(a.saldo)

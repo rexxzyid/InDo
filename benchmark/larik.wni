@@ -1,0 +1,4 @@
+misal a = []
+untuk (misal i = 0; i < 100000; i++) a.tambah(i)
+misal total = a.petakan((x) => x * 2).saring((x) => x % 3 == 0).kurangi((s, x) => s + x, 0)
+cetak(total)

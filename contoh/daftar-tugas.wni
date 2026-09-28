@@ -1,0 +1,41 @@
+kelas Tugas {
+  konstruktor(judul) {
+    ini.judul = judul
+    ini.selesai = salah
+  }
+  tandaiSelesai() {
+    ini.selesai = benar
+  }
+  keTeks() {
+    kembalikan (ini.selesai ? "[x] " : "[ ] ") + ini.judul
+  }
+}
+
+kelas DaftarTugas {
+  konstruktor() {
+    ini.tugas = []
+  }
+  tambah(judul) {
+    ini.tugas.tambah(baru Tugas(judul))
+  }
+  selesaikan(indeks) {
+    jika (indeks >= 0 dan indeks < ini.tugas.panjang) {
+      ini.tugas[indeks].tandaiSelesai()
+    }
+  }
+  jumlahSelesai() {
+    kembalikan ini.tugas.saring((t) => t.selesai).panjang
+  }
+  tampilkan() {
+    untuk (tetap t dari ini.tugas) cetak(t.keTeks())
+    cetak("Selesai: " + ini.jumlahSelesai() + "/" + ini.tugas.panjang)
+  }
+}
+
+tetap daftar = baru DaftarTugas()
+daftar.tambah("Belajar bahasa InDo")
+daftar.tambah("Menulis compiler")
+daftar.tambah("Merilis ke npm")
+daftar.selesaikan(0)
+daftar.selesaikan(1)
+daftar.tampilkan()

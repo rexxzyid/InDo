@@ -1,0 +1,6 @@
+asinkron fungsi kerja() {
+  misal total = 0
+  untuk (misal i = 0; i < 100000; i++) total += tunggu Janji.selesaikan(i)
+  kembalikan total
+}
+kerja().lalu((t) => cetak(t))

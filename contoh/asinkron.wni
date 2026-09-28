@@ -1,0 +1,18 @@
+fungsi tunda(nilai, ms) {
+  kembalikan baru Janji((selesai) => {
+    aturWaktu(() => selesai(nilai), ms)
+  })
+}
+
+asinkron fungsi utama() {
+  cetak("mulai")
+  tetap a = tunggu tunda(10, 30)
+  tetap b = tunggu tunda(20, 10)
+  cetak("a + b = " + (a + b))
+
+  tetap semua = tunggu Janji.semua([tunda(1, 5), tunda(2, 5), tunda(3, 5)])
+  cetak("semua: " + semua.gabung(", "))
+  cetak("selesai")
+}
+
+utama()

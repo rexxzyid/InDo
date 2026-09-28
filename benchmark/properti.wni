@@ -1,0 +1,4 @@
+misal o = { a: 1, b: 2, c: 3 }
+misal jumlah = 0
+untuk (misal i = 0; i < 1000000; i++) jumlah += o.a + o.b + o.c
+cetak(jumlah)

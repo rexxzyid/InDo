@@ -1,0 +1,7 @@
+impor salamBawaan, { VERSI, salam, Penghitung } dari "./pustaka.wni"
+cetak("versi:", VERSI)
+cetak(salam("Dunia"))
+cetak(salamBawaan("Bawaan"))
+misal c = baru Penghitung()
+c.tambah().tambah().tambah()
+cetak("hitung:", c.nilai)

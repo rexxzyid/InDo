@@ -1,0 +1,30 @@
+fungsi hitungMundur(mulai) {
+  misal i = mulai
+  kembalikan {
+    [Simbol.iteratorAsinkron]: fungsi() {
+      kembalikan {
+        lanjut: fungsi() {
+          jika (i > 0) {
+            tetap nilai = i
+            i = i - 1
+            kembalikan Janji.selesaikan({ nilai: nilai, selesai: salah })
+          }
+          kembalikan Janji.selesaikan({ nilai: taktentu, selesai: benar })
+        },
+      }
+    },
+  }
+}
+
+asinkron fungsi utama() {
+  untuk tunggu (tetap n dari hitungMundur(3)) {
+    cetak("mundur: " + n)
+  }
+  misal jumlah = 0
+  untuk tunggu (tetap v dari [Janji.selesaikan(10), 20, Janji.selesaikan(30)]) {
+    jumlah = jumlah + v
+  }
+  cetak("jumlah: " + jumlah)
+}
+
+utama()

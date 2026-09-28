@@ -1,0 +1,27 @@
+impor { urai } dari "./parser.wni"
+
+fungsi encodeTeks(t) {
+  tetap kode = []
+  untuk (misal i = 0; i < t.panjang; i++) kode.tambah(t.kodeDi(i))
+  kembalikan "s" + kode.gabung(",")
+}
+
+fungsi serial(nilai) {
+  jika (nilai == kosong) kembalikan "N"
+  jika (nilai == taktentu) kembalikan "U"
+  tetap t = jenisdari nilai
+  jika (t == "boolean") kembalikan nilai ? "b1" : "b0"
+  jika (t == "angka") kembalikan "n" + nilai
+  jika (t == "bilanganbesar") kembalikan "B" + nilai
+  jika (t == "teks") kembalikan encodeTeks(nilai)
+  jika (Larik.adalahLarik(nilai)) {
+    kembalikan "[" + nilai.petakan((x) => serial(x)).gabung(",") + "]"
+  }
+  tetap kunci = Objek.kunci(nilai).diurutkan()
+  kembalikan "{" + kunci.petakan((k) => k + "=" + serial(nilai[k])).gabung(",") + "}"
+}
+
+tetap jalur = Proses.lingkungan.MASUKAN_MANDIRI
+tetap sumber = Berkas.baca(jalur)
+tetap pohon = urai(sumber, jalur)
+cetak(serial(pohon))

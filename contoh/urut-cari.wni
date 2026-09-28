@@ -1,0 +1,31 @@
+fungsi urutGelembung(larik) {
+  tetap hasil = [...larik]
+  untuk (misal i = 0; i < hasil.panjang; i++) {
+    untuk (misal j = 0; j < hasil.panjang - i - 1; j++) {
+      jika (hasil[j] > hasil[j + 1]) {
+        tetap sementara = hasil[j]
+        hasil[j] = hasil[j + 1]
+        hasil[j + 1] = sementara
+      }
+    }
+  }
+  kembalikan hasil
+}
+
+fungsi cariBiner(larik, target) {
+  misal kiri = 0
+  misal kanan = larik.panjang - 1
+  selama (kiri <= kanan) {
+    tetap tengah = Matematika.bawah((kiri + kanan) / 2)
+    jika (larik[tengah] == target) kembalikan tengah
+    jika (larik[tengah] < target) kiri = tengah + 1
+    lainnya kanan = tengah - 1
+  }
+  kembalikan -1
+}
+
+tetap data = [9, 3, 7, 1, 8, 2, 5]
+tetap terurut = urutGelembung(data)
+cetak("Terurut: " + terurut.gabung(", "))
+cetak("Indeks 7: " + cariBiner(terurut, 7))
+cetak("Indeks 4: " + cariBiner(terurut, 4))

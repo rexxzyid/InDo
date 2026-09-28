@@ -1,0 +1,9 @@
+cetak("sinkron 1")
+asinkron fungsi tugas(nama, tunda) {
+  tunggu baru Janji((selesaikan) => aturWaktu(selesaikan, tunda))
+  kembalikan `${nama} selesai`
+}
+Janji.semua([tugas("A", 30), tugas("B", 10)]).lalu((hasil) => cetak(hasil))
+Janji.selesaikan().lalu(() => cetak("mikrotask dulu"))
+aturWaktu(() => cetak("timer terakhir"), 50)
+cetak("sinkron 2")

@@ -1,0 +1,35 @@
+{
+  "name": "@rexxhayanasi/b-indo",
+  "version": "1.0.0",
+  "description": "Bahasa pemrograman dengan kata kunci berbahasa Indonesia",
+  "type": "module",
+  "bin": {
+    "indo": "dist/cli/index.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc && node skrip/pasca-bina.mjs",
+    "bundel": "npx --yes esbuild dist/cli/index.js --bundle --platform=node --format=esm --minify --outfile=dist/cli/index.mjs && node skrip/pasca-bina.mjs",
+    "indo": "node dist/cli/index.js",
+    "test": "tsc && node skrip/pasca-bina.mjs && node --test \"dist/**/*.test.js\"",
+    "test:golden": "tsc && node dist/cli/index.js tes",
+    "mandiri": "tsc && node dist/cli/index.js mandiri",
+    "verifikasi:bootstrap": "tsc && node skrip/verifikasi-bootstrap.mjs",
+    "benchmark": "tsc && node benchmark/jalankan.mjs",
+    "bersih": "rm -rf dist",
+    "prepublishOnly": "tsc && node skrip/pasca-bina.mjs && npm run bundel"
+  },
+  "files": [
+    "dist/cli/index.mjs",
+    "mandiri",
+    "contoh",
+    "README.md",
+    "DOKUMENTASI.md"
+  ],
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
