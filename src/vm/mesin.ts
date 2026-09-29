@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as jalurNode from "node:path";
 import * as kripto from "node:crypto";
 import * as http from "node:http";
+import * as zlib from "node:zlib";
 import { GalatEksekusi, LemparInDo, SinyalHasilkan } from "../galat/eksekusi.js";
 import { Op } from "../compiler/opcode.js";
 import { Kompiler } from "../compiler/kompiler.js";
@@ -71,6 +72,11 @@ export interface OpsiMesin {
   muatSumberModul?: (spesifikasi: string, dariJalur: string) => { jalur: string; sumber: string };
   masukan?: (pesan: string) => string;
 }
+
+const PRAKATA_X25519_PRIVAT = Buffer.from("302e020100300506032b656e04220420", "hex");
+const PRAKATA_X25519_PUBLIK = Buffer.from("302a300506032b656e032100", "hex");
+const PRAKATA_ED25519_PRIVAT = Buffer.from("302e020100300506032b657004220420", "hex");
+const PRAKATA_ED25519_PUBLIK = Buffer.from("302a300506032b6570032100", "hex");
 
 export class Mesin {
   private readonly tumpukan: Nilai[] = [];
@@ -156,6 +162,18 @@ export class Mesin {
 
   private nf(nama: string, fn: (a: Nilai[]) => Nilai): FungsiNatif {
     return new FungsiNatif(nama, -1, fn);
+  }
+
+  private keByte(nilai: Nilai): Buffer {
+    if (nilai instanceof LarikBertipeInDo) return Buffer.from(nilai.ta as unknown as Uint8Array);
+    if (nilai instanceof PenyanggaLarikInDo) return Buffer.from(nilai.buf);
+    if (nilai instanceof LarikInDo) return Buffer.from(nilai.elemen.map((x) => this.angka(x) & 0xff));
+    if (typeof nilai === "string") return Buffer.from(nilai, "utf8");
+    return this.galat("nilai tidak dapat dibaca sebagai byte", "GalatTipe");
+  }
+
+  private dariByte(buf: Buffer | Uint8Array): LarikBertipeInDo {
+    return new LarikBertipeInDo(new Uint8Array(buf), "Uint8");
   }
 
   private pasangPustaka(): void {
@@ -546,6 +564,108 @@ export class Mesin {
           const buf = kripto.randomBytes(this.angka(a[0] ?? 0));
           return new LarikInDo([...buf] as Nilai[]);
         }),
+        byteAcakBiner: this.nf("byteAcakBiner", (a) => this.dariByte(kripto.randomBytes(this.angka(a[0] ?? 0)))),
+        sha256: this.nf("sha256", (a) => this.dariByte(kripto.createHash("sha256").update(this.keByte(a[0])).digest())),
+        sha512: this.nf("sha512", (a) => this.dariByte(kripto.createHash("sha512").update(this.keByte(a[0])).digest())),
+        hmacSha256: this.nf("hmacSha256", (a) => this.dariByte(kripto.createHmac("sha256", this.keByte(a[0])).update(this.keByte(a[1])).digest())),
+        hmacSha512: this.nf("hmacSha512", (a) => this.dariByte(kripto.createHmac("sha512", this.keByte(a[0])).update(this.keByte(a[1])).digest())),
+        hkdf: this.nf("hkdf", (a) => this.dariByte(Buffer.from(kripto.hkdfSync("sha256", this.keByte(a[0]), this.keByte(a[1]), this.keByte(a[2]), this.angka(a[3]))))),
+        aesGcmEnkripsi: this.nf("aesGcmEnkripsi", (a) => {
+          const kunci = this.keByte(a[0]);
+          const c = kripto.createCipheriv(`aes-${kunci.length * 8}-gcm` as kripto.CipherGCMTypes, kunci, this.keByte(a[1]));
+          if (a[3] !== undefined) c.setAAD(this.keByte(a[3]));
+          const sandi = Buffer.concat([c.update(this.keByte(a[2])), c.final()]);
+          return this.dariByte(Buffer.concat([sandi, c.getAuthTag()]));
+        }),
+        aesGcmDekripsi: this.nf("aesGcmDekripsi", (a) => {
+          const kunci = this.keByte(a[0]);
+          const semua = this.keByte(a[2]);
+          const tag = semua.subarray(semua.length - 16);
+          const sandi = semua.subarray(0, semua.length - 16);
+          const d = kripto.createDecipheriv(`aes-${kunci.length * 8}-gcm` as kripto.CipherGCMTypes, kunci, this.keByte(a[1]));
+          if (a[3] !== undefined) d.setAAD(this.keByte(a[3]));
+          d.setAuthTag(tag);
+          return this.dariByte(Buffer.concat([d.update(sandi), d.final()]));
+        }),
+        aesCbcEnkripsi: this.nf("aesCbcEnkripsi", (a) => {
+          const kunci = this.keByte(a[0]);
+          const c = kripto.createCipheriv(`aes-${kunci.length * 8}-cbc`, kunci, this.keByte(a[1]));
+          return this.dariByte(Buffer.concat([c.update(this.keByte(a[2])), c.final()]));
+        }),
+        aesCbcDekripsi: this.nf("aesCbcDekripsi", (a) => {
+          const kunci = this.keByte(a[0]);
+          const d = kripto.createDecipheriv(`aes-${kunci.length * 8}-cbc`, kunci, this.keByte(a[1]));
+          return this.dariByte(Buffer.concat([d.update(this.keByte(a[2])), d.final()]));
+        }),
+        x25519BuatKunci: this.nf("x25519BuatKunci", () => {
+          const pasangan = kripto.generateKeyPairSync("x25519");
+          const privat = pasangan.privateKey.export({ format: "der", type: "pkcs8" }).subarray(-32);
+          const publik = pasangan.publicKey.export({ format: "der", type: "spki" }).subarray(-32);
+          return this.objekNatif({ privat: this.dariByte(privat), publik: this.dariByte(publik) });
+        }),
+        x25519Rahasia: this.nf("x25519Rahasia", (a) => {
+          const privat = kripto.createPrivateKey({ key: Buffer.concat([PRAKATA_X25519_PRIVAT, this.keByte(a[0])]), format: "der", type: "pkcs8" });
+          const publik = kripto.createPublicKey({ key: Buffer.concat([PRAKATA_X25519_PUBLIK, this.keByte(a[1])]), format: "der", type: "spki" });
+          return this.dariByte(kripto.diffieHellman({ privateKey: privat, publicKey: publik }));
+        }),
+        ed25519BuatKunci: this.nf("ed25519BuatKunci", () => {
+          const pasangan = kripto.generateKeyPairSync("ed25519");
+          const privat = pasangan.privateKey.export({ format: "der", type: "pkcs8" }).subarray(-32);
+          const publik = pasangan.publicKey.export({ format: "der", type: "spki" }).subarray(-32);
+          return this.objekNatif({ privat: this.dariByte(privat), publik: this.dariByte(publik) });
+        }),
+        ed25519Tandatangan: this.nf("ed25519Tandatangan", (a) => {
+          const kunci = kripto.createPrivateKey({ key: Buffer.concat([PRAKATA_ED25519_PRIVAT, this.keByte(a[0])]), format: "der", type: "pkcs8" });
+          return this.dariByte(kripto.sign(null, this.keByte(a[1]), kunci));
+        }),
+        ed25519Verifikasi: this.nf("ed25519Verifikasi", (a) => {
+          const kunci = kripto.createPublicKey({ key: Buffer.concat([PRAKATA_ED25519_PUBLIK, this.keByte(a[0])]), format: "der", type: "spki" });
+          return kripto.verify(null, this.keByte(a[1]), kunci, this.keByte(a[2]));
+        }),
+      }),
+    );
+
+    this.definisiGlobal(
+      "Bita",
+      this.objekNatif({
+        gabung: this.nf("gabung", (a) => this.dariByte(Buffer.concat(a.map((x) => this.keByte(x))))),
+        iris: this.nf("iris", (a) => this.dariByte(this.keByte(a[0]).subarray(this.angka(a[1] ?? 0), a[2] === undefined ? undefined : this.angka(a[2])))),
+        panjang: this.nf("panjang", (a) => this.keByte(a[0]).length),
+        keTeks: this.nf("keTeks", (a) => this.keByte(a[0]).toString("utf8")),
+        dariTeks: this.nf("dariTeks", (a) => this.dariByte(Buffer.from(keTeks(a[0]), "utf8"))),
+        keBase64: this.nf("keBase64", (a) => this.keByte(a[0]).toString("base64")),
+        dariBase64: this.nf("dariBase64", (a) => this.dariByte(Buffer.from(keTeks(a[0]), "base64"))),
+        keBase64Url: this.nf("keBase64Url", (a) => this.keByte(a[0]).toString("base64url")),
+        dariBase64Url: this.nf("dariBase64Url", (a) => this.dariByte(Buffer.from(keTeks(a[0]), "base64url"))),
+        keHeks: this.nf("keHeks", (a) => this.keByte(a[0]).toString("hex")),
+        dariHeks: this.nf("dariHeks", (a) => this.dariByte(Buffer.from(keTeks(a[0]), "hex"))),
+        bacaUintBE: this.nf("bacaUintBE", (a) => this.keByte(a[0]).readUIntBE(this.angka(a[1] ?? 0), this.angka(a[2] ?? 4))),
+        bacaUintLE: this.nf("bacaUintLE", (a) => this.keByte(a[0]).readUIntLE(this.angka(a[1] ?? 0), this.angka(a[2] ?? 4))),
+        tulisUintBE: this.nf("tulisUintBE", (a) => {
+          const panjang = this.angka(a[1] ?? 4);
+          const buf = Buffer.alloc(panjang);
+          buf.writeUIntBE(this.angka(a[0]), 0, panjang);
+          return this.dariByte(buf);
+        }),
+        tulisUintLE: this.nf("tulisUintLE", (a) => {
+          const panjang = this.angka(a[1] ?? 4);
+          const buf = Buffer.alloc(panjang);
+          buf.writeUIntLE(this.angka(a[0]), 0, panjang);
+          return this.dariByte(buf);
+        }),
+        sama: this.nf("sama", (a) => this.keByte(a[0]).equals(this.keByte(a[1]))),
+      }),
+    );
+
+    this.definisiGlobal(
+      "Zlib",
+      this.objekNatif({
+        kempis: this.nf("kempis", (a) => this.dariByte(zlib.deflateSync(this.keByte(a[0])))),
+        kembang: this.nf("kembang", (a) => this.dariByte(zlib.inflateSync(this.keByte(a[0])))),
+        kempisMentah: this.nf("kempisMentah", (a) => this.dariByte(zlib.deflateRawSync(this.keByte(a[0])))),
+        kembangMentah: this.nf("kembangMentah", (a) => this.dariByte(zlib.inflateRawSync(this.keByte(a[0])))),
+        gzip: this.nf("gzip", (a) => this.dariByte(zlib.gzipSync(this.keByte(a[0])))),
+        gunzip: this.nf("gunzip", (a) => this.dariByte(zlib.gunzipSync(this.keByte(a[0])))),
       }),
     );
 
@@ -554,6 +674,7 @@ export class Mesin {
       this.objekNatif({
         ambil: this.nf("ambil", (a) => this.ambilJaringan(keTeks(a[0]), a[1])),
         buatServer: this.nf("buatServer", (a) => this.buatServer(a[0])),
+        soketWeb: this.nf("soketWeb", (a) => this.buatSoketWeb(keTeks(a[0]), a[1])),
       }),
     );
 
@@ -653,6 +774,92 @@ export class Mesin {
       }),
     });
     return objekServer;
+  }
+
+  private buatSoketWeb(url: string, protokol: Nilai): ObjekInDo {
+    const WSKelas = (globalThis as { WebSocket?: new (u: string, p?: string | string[]) => unknown }).WebSocket;
+    if (!WSKelas) return this.galat("WebSocket tidak tersedia di runtime Node ini", "Galat");
+    const argProtokol = typeof protokol === "string" ? protokol : undefined;
+    const ws = new WSKelas(url, argProtokol) as {
+      binaryType: string;
+      send: (d: unknown) => void;
+      close: (kode?: number, alasan?: string) => void;
+      addEventListener: (jenis: string, fn: (ev: { data?: unknown; code?: number; reason?: string }) => void) => void;
+    };
+    ws.binaryType = "arraybuffer";
+    const pendengar: { buka?: Nilai; pesan?: Nilai; tutup?: Nilai; galat?: Nilai } = {};
+    let hidup = true;
+    this.mulaiReal();
+    const matikan = () => {
+      if (hidup) {
+        hidup = false;
+        this.selesaiReal();
+      }
+    };
+    ws.addEventListener("open", () => {
+      if (this.adalahDapatDipanggil(pendengar.buka)) {
+        this.panggilNilai(pendengar.buka as Nilai, undefined, []);
+        this.kurasMikro();
+      }
+    });
+    ws.addEventListener("message", (ev) => {
+      if (this.adalahDapatDipanggil(pendengar.pesan)) {
+        const data = typeof ev.data === "string" ? ev.data : this.dariByte(Buffer.from(ev.data as ArrayBuffer));
+        this.panggilNilai(pendengar.pesan as Nilai, undefined, [data]);
+        this.kurasMikro();
+      }
+    });
+    ws.addEventListener("close", (ev) => {
+      matikan();
+      if (this.adalahDapatDipanggil(pendengar.tutup)) {
+        this.panggilNilai(pendengar.tutup as Nilai, undefined, [ev.code ?? 0, ev.reason ?? ""]);
+        this.kurasMikro();
+      }
+    });
+    ws.addEventListener("error", () => {
+      if (this.adalahDapatDipanggil(pendengar.galat)) {
+        this.panggilNilai(pendengar.galat as Nilai, undefined, []);
+        this.kurasMikro();
+      }
+    });
+    this.serverAktif.push({
+      tutup: () => {
+        try {
+          ws.close();
+        } catch {
+          void 0;
+        }
+        matikan();
+      },
+    });
+    const objek: ObjekInDo = this.objekNatif({
+      kirim: this.nf("kirim", (a) => {
+        ws.send(typeof a[0] === "string" ? a[0] : this.keByte(a[0]));
+        return undefined;
+      }),
+      tutup: this.nf("tutup", (a) => {
+        ws.close(a[0] === undefined ? 1000 : this.angka(a[0]), a[1] === undefined ? "" : keTeks(a[1]));
+        matikan();
+        return undefined;
+      }),
+      saatBuka: this.nf("saatBuka", (a) => {
+        pendengar.buka = a[0];
+        return objek;
+      }),
+      saatPesan: this.nf("saatPesan", (a) => {
+        pendengar.pesan = a[0];
+        return objek;
+      }),
+      saatTutup: this.nf("saatTutup", (a) => {
+        pendengar.tutup = a[0];
+        return objek;
+      }),
+      saatGalat: this.nf("saatGalat", (a) => {
+        pendengar.galat = a[0];
+        return objek;
+      }),
+    });
+    return objek;
   }
 
   private larikDari(sumber: Nilai, pemeta: Nilai): LarikInDo {
