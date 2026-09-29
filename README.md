@@ -19,7 +19,7 @@ untuk (tetap orang dari ["Dunia", "InDo"]) {
 ## Instalasi
 
 ```bash
-npm install -g @rexxhayanasi/b-indo
+npm install -g indo-langvm
 ```
 
 Perintah CLI-nya tetap `indo`.
