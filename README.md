@@ -93,7 +93,7 @@ npm run verifikasi:bootstrap
 
 ```bash
 npm test          # seluruh tes (unit, golden, diferensial, bootstrap)
-npm run benchmark # tolok ukur performa
+npm run benchmark # tolak ukur performa
 ```
 
 InDo diimplementasikan sebagai lexer → parser (Pratt) → compiler bytecode → mesin
